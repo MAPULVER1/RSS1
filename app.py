@@ -18,14 +18,14 @@ client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 def tag_subject(title):
     title = title.lower()
     subject_keywords = {
-        "The Executive Branch": ["president", "white house", "executive", "biden"],
+        "The Executive Branch": ["president", "white house", "executive", "trump"],
         "The Legislative Branch": ["congress", "senate", "house", "bill"],
         "The Judicial Branch": ["court", "judge", "justice", "ruling"],
         "Education": ["education", "school", "student", "teacher"],
-        "Technology": ["ai", "tech", "data", "software"],
+        "Technology": ["ai", "innovation", "data", "software"],
         "Business & the Economy": ["inflation", "market", "finance", "jobs"],
         "World Leaders": ["putin", "xi", "modi", "zelensky"],
-        "International Conflicts": ["war", "missile", "invasion", "conflict"],
+        "International Conflicts": ["war", "proxy", "invasion", "conflict"],
         "Business & Commerce": ["merger", "startup", "stock", "company"],
         "The Global Economy": ["global", "exports", "imports", "trade"],
         "Human Rights": ["rights", "freedom", "protest", "oppression"]
