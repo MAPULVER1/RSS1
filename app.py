@@ -15,7 +15,7 @@ client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # --- SUBJECT KEYWORDS ---
 subject_keywords = {
-    "The Executive Branch": ["president", "white house", "executive", "trump"],
+    "The Executive Branch": ["president", "white house", "executive", "department"],
     "The Legislative Branch": ["congress", "senate", "house", "bill"],
     "The Judicial Branch": ["court", "judge", "justice", "ruling"],
     "Education": ["education", "school", "student", "teacher"],
