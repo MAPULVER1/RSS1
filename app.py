@@ -8,13 +8,34 @@ from datetime import datetime
 import plotly.express as px
 import os
 
-# Set up page layout
+# Set up page
 st.set_page_config(page_title="PulverLogic RSS", layout="wide")
 st.title("🗞️ PulverLogic News Intelligence Platform")
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# --- ARCHIVE SETUP ---
+# --- SUBJECT TAGGING LOGIC ---
+def tag_subject(title):
+    title = title.lower()
+    subject_keywords = {
+        "The Executive Branch": ["president", "white house", "executive", "biden"],
+        "The Legislative Branch": ["congress", "senate", "house", "bill"],
+        "The Judicial Branch": ["court", "judge", "justice", "ruling"],
+        "Education": ["education", "school", "student", "teacher"],
+        "Technology": ["ai", "tech", "data", "software"],
+        "Business & the Economy": ["inflation", "market", "finance", "jobs"],
+        "World Leaders": ["putin", "xi", "modi", "zelensky"],
+        "International Conflicts": ["war", "missile", "invasion", "conflict"],
+        "Business & Commerce": ["merger", "startup", "stock", "company"],
+        "The Global Economy": ["global", "exports", "imports", "trade"],
+        "Human Rights": ["rights", "freedom", "protest", "oppression"]
+    }
+    for subject, keywords in subject_keywords.items():
+        if any(k in title for k in keywords):
+            return subject
+    return "General"
+
+# --- ARCHIVE FILE ---
 archive_file = "rss_archive.csv"
 if os.path.exists(archive_file):
     df_archive = pd.read_csv(archive_file)
@@ -39,7 +60,7 @@ credibility_tags = {
     "BBC News": "News Source (Credentialed, Independent)"
 }
 
-# --- COLLECT CURRENT HEADLINES ---
+# --- LIVE HEADLINES ---
 today = datetime.today().strftime("%Y-%m-%d")
 entries = []
 for source, url in rss_urls.items():
@@ -52,12 +73,12 @@ for source, url in rss_urls.items():
             "Link": entry.link,
             "Bias": bias_tags.get(source, "Unspecified"),
             "Credibility": credibility_tags.get(source, "Unverified"),
-            "Subject": "General"
+            "Subject": tag_subject(entry.title)
         })
 
 df_today = pd.DataFrame(entries)
 
-# --- GENERATE WARRANT FUNCTION ---
+# --- WARRANT GENERATOR ---
 def generate_warrant(title, source, theme, bias):
     try:
         response = client.chat.completions.create(
@@ -78,12 +99,18 @@ section = st.sidebar.radio("Navigate", ["📰 Top Headlines", "📊 Visual Trend
 
 # --- TOP HEADLINES ---
 if section == "📰 Top Headlines":
-    st.subheader("📰 Explore Live Headlines")
+    st.subheader("📰 Explore Live Headlines by Subject")
     if not df_today.empty:
-        selected = st.selectbox("Choose a headline", df_today["Title"].tolist())
-        row = df_today[df_today["Title"] == selected].iloc[0]
+        subject_filter = st.selectbox("Filter by Subject", ["All"] + sorted(df_today["Subject"].unique()))
+        if subject_filter != "All":
+            filtered_today = df_today[df_today["Subject"] == subject_filter]
+        else:
+            filtered_today = df_today
+
+        selected = st.selectbox("Choose a headline", filtered_today["Title"].tolist())
+        row = filtered_today[filtered_today["Title"] == selected].iloc[0]
         st.markdown(f"#### {row['Title']}")
-        st.caption(f"{row['Source']} • {row['Date']} • Bias: {row['Bias']} • Credibility: {row['Credibility']}")
+        st.caption(f"{row['Source']} • {row['Date']} • Bias: {row['Bias']} • Credibility: {row['Credibility']} • Subject: {row['Subject']}")
         st.markdown(f"[🔗 Read Article]({row['Link']})")
 
         if st.button("🧠 Generate Warrant"):
@@ -94,7 +121,7 @@ if section == "📰 Top Headlines":
     else:
         st.info("No live headlines at the moment.")
 
-# --- VISUAL DASHBOARD ---
+# --- VISUAL TRENDS ---
 elif section == "📊 Visual Trends":
     st.subheader("📊 Subject Mentions Over Time")
     if not df_archive.empty:
@@ -118,7 +145,7 @@ elif section == "📊 Visual Trends":
     else:
         st.warning("No archived data available.")
 
-# --- ARCHIVE DASHBOARD ---
+# --- ARCHIVE TOOLS ---
 elif section == "📂 Archive Tools":
     st.subheader("📂 Search the Archive")
     if not df_archive.empty:
