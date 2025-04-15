@@ -2,12 +2,12 @@ name: Archive RSS Headlines
 
 on:
   schedule:
-    - cron: '0 6 * * *'  # Daily at 6:00 AM UTC
+    - cron: '0 6 * * *'  # Runs every day at 6:00 AM UTC
   workflow_dispatch:
 
 jobs:
   archive:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04  # ✅ explicitly supported version
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
