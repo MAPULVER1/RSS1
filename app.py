@@ -1,4 +1,4 @@
-
+c
 import streamlit as st
 import pandas as pd
 import feedparser
@@ -26,8 +26,8 @@ def tag_subject(title):
         "Business & the Economy": ["inflation", "market", "finance", "jobs"],
         "World Leaders": ["putin", "xi", "modi", "zelensky"],
         "International Conflicts": ["war", "proxy", "invasion", "conflict"],
-        "Business & Commerce": ["merger", "startup", "stock", "company"],
-        "The Global Economy": ["global", "exports", "imports", "trade"],
+        "Business & Commerce": ["merger", "startup", "speculation", "corporate"],
+        "The Global Economy": ["free trade", "exports", "imports", "tariffs"],
         "Human Rights": ["rights", "freedom", "protest", "oppression"]
     }
     for subject, keywords in subject_keywords.items():
