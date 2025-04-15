@@ -4,20 +4,19 @@ import feedparser
 import pandas as pd
 import openai
 from openai import OpenAI
+import plotly.express as px
 import matplotlib.pyplot as plt
 from collections import Counter
-import re
 from datetime import datetime, timedelta
 import random
 import os
 
-# Streamlit page config
+# --- CONFIG ---
 st.set_page_config(page_title="PulverLogic Dashboard", layout="wide")
 st.title("🗞️ PulverLogic Daily News Intelligence")
-
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# Subject keywords
+# --- SUBJECT TAGGING SETUP ---
 subject_keywords = {
     "The Legislative Branch": ["congress", "senate", "house", "bill", "lawmakers"],
     "Education": ["education", "schools", "students", "teachers", "curriculum"],
@@ -39,6 +38,7 @@ def tag_subject(title):
             return subject
     return "General"
 
+# --- ARCHIVE LOGIC ---
 def archive_today_articles(df, archive_file="rss_archive.csv"):
     if os.path.exists(archive_file):
         existing = pd.read_csv(archive_file)
@@ -47,7 +47,7 @@ def archive_today_articles(df, archive_file="rss_archive.csv"):
         combined = df
     combined.to_csv(archive_file, index=False)
 
-# Simulate 30-day data
+# --- TREND DATA MOCK ---
 subjects = list(subject_keywords.keys())
 today = datetime.today()
 dates = [today - timedelta(days=i) for i in range(30)]
@@ -58,13 +58,9 @@ for date in dates:
     for subject in subjects:
         count = max(0, int(random.gauss(mu=2, sigma=1)))
         simulated_data.append({"Date": date.date(), "Subject": subject, "Count": count})
-
 df_subjects = pd.DataFrame(simulated_data)
-today_data = df_subjects[df_subjects["Date"] == today.date()]
-bar_data = today_data.groupby("Subject")["Count"].sum().reset_index()
-line_data = df_subjects.groupby(["Date", "Subject"])["Count"].sum().unstack(fill_value=0)
 
-# RSS sources
+# --- RSS + SUBJECT LOGIC ---
 rss_urls = {
     "NPR Education": "https://www.npr.org/rss/rss.php?id=1014",
     "Al Jazeera Top": "https://www.aljazeera.com/xml/rss/all.xml",
@@ -96,7 +92,7 @@ def generate_warrant(title, source, theme, bias):
     except Exception as e:
         return f"Warrant unavailable: {str(e)}"
 
-# Live headlines
+# --- FETCH HEADLINES ---
 entries = []
 for source, url in rss_urls.items():
     feed = feedparser.parse(url)
@@ -111,59 +107,91 @@ for source, url in rss_urls.items():
             "Credibility": credibility_tags.get(source, "Unverified"),
             "Subject": subject
         })
-
 df = pd.DataFrame(entries)
 archive_today_articles(df)
 
+# --- LOAD ARCHIVE DATA ---
+archive_path = "rss_archive.csv"
+if os.path.exists(archive_path):
+    archive_df = pd.read_csv(archive_path)
+    archive_df["Date"] = pd.to_datetime(archive_df["Date"], errors="coerce")
+    archive_df.dropna(subset=["Date"], inplace=True)
+else:
+    archive_df = pd.DataFrame(columns=["Date", "Title", "Source", "Link", "Bias", "Credibility", "Subject"])
+
+# --- PLOTLY TRENDS DATA ---
+trend_df = archive_df.groupby(["Date", "Subject"]).size().reset_index(name="Mentions")
+
+# --- TABS ---
 tab1, tab2, tab3 = st.tabs(["📰 Top Headlines", "📊 Visual Dashboard", "📂 Archive Dashboard"])
 
-# --- TOP HEADLINES AS CLICKABLE BOXES ---
+# --- TAB 1: HEADLINES ---
 with tab1:
-    st.markdown("### 🗂 Click a headline to explore")
+    st.markdown("### Select a headline to explore")
     selected = st.radio("📰 Select article:", df["Title"].tolist(), index=0)
-
     article = df[df["Title"] == selected].iloc[0]
+
     st.markdown(f"## {article['Title']}")
-    st.write(f"**Source:** {article['Source']}  |  **Date:** {article['Date']}")
-    st.write(f"**Subject:** {article['Subject']}  |  **Bias:** {article['Bias']}  |  **Credibility:** {article['Credibility']}")
+    st.write(f"**Source:** {article['Source']} | **Date:** {article['Date']}")
+    st.write(f"**Subject:** {article['Subject']} | **Bias:** {article['Bias']} | **Credibility:** {article['Credibility']}")
     st.markdown(f"[🔗 Read Article]({article['Link']})")
 
     if st.button("🧠 Generate Warrant"):
-        with st.spinner("Generating warrant..."):
-            warrant = generate_warrant(article["Title"], article["Source"], article["Subject"], article["Bias"])
+        with st.spinner("Generating..."):
+            result = generate_warrant(article["Title"], article["Source"], article["Subject"], article["Bias"])
             st.success("Claim + Warrant:")
-            st.write(warrant)
+            st.write(result)
 
-# --- REFINED VISUAL DASHBOARD ---
+# --- TAB 2: PLOTLY TRENDS ---
 with tab2:
-    st.markdown("### 📊 Subject Coverage Overview")
+    st.markdown("### 📈 Subject Trends (Click to Explore)")
 
-    col1, col2 = st.columns([1, 2])
+    fig = px.line(
+        trend_df,
+        x="Date",
+        y="Mentions",
+        color="Subject",
+        title="Trends by Subject",
+        template="plotly_white",
+        markers=True
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
+    st.markdown("### 🔍 Filter Articles by Date + Subject")
+    col1, col2 = st.columns(2)
     with col1:
-        st.markdown("#### Credibility Distribution")
-        credibility_counts = df["Credibility"].value_counts()
-        fig1, ax1 = plt.subplots(figsize=(4, 4))
-        ax1.pie(credibility_counts, labels=credibility_counts.index, autopct="%1.1f%%", startangle=90)
-        ax1.axis("equal")
-        st.pyplot(fig1)
-
-        st.markdown("#### Today’s Subjects")
-        fig2, ax2 = plt.subplots(figsize=(4, 4))
-        ax2.bar(bar_data["Subject"], bar_data["Count"], color=plt.cm.Set2.colors)
-        ax2.set_ylabel("Mentions")
-        ax2.set_xticklabels(bar_data["Subject"], rotation=45, ha="right", fontsize=8)
-        st.pyplot(fig2)
-
+        date_filter = st.date_input("Select a Date", value=today)
     with col2:
-        st.markdown("#### Subject Trendlines (Last 30 Days)")
-        fig3, ax3 = plt.subplots(figsize=(12, 5))
-        line_data.plot(ax=ax3, color=plt.cm.Set1.colors)
-        ax3.set_ylabel("Mentions per Day")
-        ax3.set_xlabel("Date")
-        ax3.set_title("Subject Trends")
-        ax3.legend(title="Subjects", bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
-        fig3.tight_layout()
-        st.pyplot(fig3)
+        subject_filter = st.selectbox("Select a Subject", ["All"] + sorted(archive_df["Subject"].unique()))
 
-# Tab3 (Archive Dashboard) is left untouched and assumed to already be appended
+    results = archive_df[archive_df["Date"] == pd.to_datetime(date_filter)]
+    if subject_filter != "All":
+        results = results[results["Subject"] == subject_filter]
+
+    st.markdown(f"### {len(results)} Articles Found")
+    st.dataframe(results[["Date", "Title", "Source", "Link", "Bias", "Credibility", "Subject"]])
+
+# --- TAB 3: ARCHIVE FILTER ---
+with tab3:
+    st.subheader("📂 Archive Dashboard")
+
+    if archive_df.empty:
+        st.warning("No archive data available yet.")
+    else:
+        fcol1, fcol2 = st.columns(2)
+        with fcol1:
+            sub_filter = st.selectbox("Filter by Subject", ["All"] + sorted(archive_df["Subject"].unique()))
+        with fcol2:
+            date_range = st.date_input("Select Date Range", [archive_df["Date"].min(), archive_df["Date"].max()])
+
+        filtered_df = archive_df.copy()
+        if sub_filter != "All":
+            filtered_df = filtered_df[filtered_df["Subject"] == sub_filter]
+        filtered_df = filtered_df[
+            (filtered_df["Date"] >= pd.to_datetime(date_range[0])) &
+            (filtered_df["Date"] <= pd.to_datetime(date_range[1]))
+        ]
+
+        st.markdown(f"### {len(filtered_df)} Articles")
+        st.dataframe(filtered_df[["Date", "Title", "Source", "Subject", "Bias", "Credibility"]])
+        st.download_button("📥 Download CSV", data=filtered_df.to_csv(index=False), file_name="filtered_archive.csv")
