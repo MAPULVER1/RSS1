@@ -16,7 +16,7 @@ st.title("🗞️ PulverLogic News Intelligence Platform")
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # Use cleaned archive file
-archive_file = "rss_archive_cleaned.csv"
+archive_file = "rss_archive.csv"
 if os.path.exists(archive_file):
     df_archive = pd.read_csv(archive_file)
     df_archive["Date"] = pd.to_datetime(df_archive["Date"], errors="coerce")
