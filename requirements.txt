@@ -1,6 +1,7 @@
 
 streamlit
-feedparser
 pandas
+feedparser
 openai
 matplotlib
+plotly
