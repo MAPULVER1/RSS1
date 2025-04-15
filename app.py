@@ -1,4 +1,4 @@
-c
+
 import streamlit as st
 import pandas as pd
 import feedparser
@@ -8,34 +8,34 @@ from datetime import datetime
 import plotly.express as px
 import os
 
-# Set up page
+# --- CONFIG ---
 st.set_page_config(page_title="PulverLogic RSS", layout="wide")
 st.title("🗞️ PulverLogic News Intelligence Platform")
-
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# --- SUBJECT TAGGING LOGIC ---
+# --- UPDATED SUBJECT KEYWORDS ---
+subject_keywords = {
+    "The Executive Branch": ["president", "white house", "executive", "trump"],
+    "The Legislative Branch": ["congress", "senate", "house", "bill"],
+    "The Judicial Branch": ["court", "judge", "justice", "ruling"],
+    "Education": ["education", "school", "student", "teacher"],
+    "Technology": ["ai", "innovation", "data", "software"],
+    "Business & the Economy": ["inflation", "market", "finance", "jobs"],
+    "World Leaders": ["putin", "xi", "modi", "zelensky"],
+    "International Conflicts": ["war", "proxy", "invasion", "conflict"],
+    "Business & Commerce": ["merger", "startup", "speculation", "corporate"],
+    "The Global Economy": ["free trade", "exports", "imports", "tariffs"],
+    "Human Rights": ["rights", "freedom", "protest", "oppression"]
+}
+
 def tag_subject(title):
     title = title.lower()
-    subject_keywords = {
-        "The Executive Branch": ["president", "white house", "executive", "trump"],
-        "The Legislative Branch": ["congress", "senate", "house", "bill"],
-        "The Judicial Branch": ["court", "judge", "justice", "ruling"],
-        "Education": ["education", "school", "student", "teacher"],
-        "Technology": ["ai", "innovation", "data", "software"],
-        "Business & the Economy": ["inflation", "market", "finance", "jobs"],
-        "World Leaders": ["putin", "xi", "modi", "zelensky"],
-        "International Conflicts": ["war", "proxy", "invasion", "conflict"],
-        "Business & Commerce": ["merger", "startup", "speculation", "corporate"],
-        "The Global Economy": ["free trade", "exports", "imports", "tariffs"],
-        "Human Rights": ["rights", "freedom", "protest", "oppression"]
-    }
     for subject, keywords in subject_keywords.items():
         if any(k in title for k in keywords):
             return subject
     return "General"
 
-# --- ARCHIVE FILE ---
+# --- ARCHIVE ---
 archive_file = "rss_archive.csv"
 if os.path.exists(archive_file):
     df_archive = pd.read_csv(archive_file)
@@ -43,29 +43,41 @@ if os.path.exists(archive_file):
 else:
     df_archive = pd.DataFrame(columns=["Date", "Source", "Title", "Link", "Subject", "Subject Confidence"])
 
-# --- RSS SOURCES ---
+# --- EXPANDED RSS SOURCES ---
 rss_urls = {
     "NPR": "https://www.npr.org/rss/rss.php?id=1001",
     "Reuters": "http://feeds.reuters.com/reuters/topNews",
-    "BBC News": "http://feeds.bbci.co.uk/news/rss.xml"
+    "BBC News": "http://feeds.bbci.co.uk/news/rss.xml",
+    "CNN": "http://rss.cnn.com/rss/edition.rss",
+    "The New York Times": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+    "The Guardian": "https://www.theguardian.com/world/rss",
+    "Al Jazeera": "https://www.aljazeera.com/xml/rss/all.xml",
+    "Fox News": "http://feeds.foxnews.com/foxnews/latest",
+    "Bloomberg": "https://www.bloomberg.com/feed/podcast/etf-report.xml",
+    "The Washington Post": "http://feeds.washingtonpost.com/rss/national",
+    "ABC News": "https://abcnews.go.com/abcnews/topstories",
+    "CBS News": "https://www.cbsnews.com/latest/rss/main",
+    "NBC News": "http://feeds.nbcnews.com/nbcnews/public/news",
+    "USA Today": "http://rssfeeds.usatoday.com/usatoday-NewsTopStories",
+    "Politico": "https://www.politico.com/rss/politics08.xml",
+    "The Hill": "https://thehill.com/rss/syndicator/19110",
+    "Time": "http://feeds2.feedburner.com/time/topstories",
+    "Newsweek": "https://www.newsweek.com/rss",
+    "The Atlantic": "https://www.theatlantic.com/feed/all/",
+    "The Economist": "https://www.economist.com/the-world-this-week/rss.xml",
+    "Financial Times": "https://www.ft.com/?format=rss",
+    "Sky News": "https://feeds.skynews.com/feeds/rss/home.xml",
+    "Axios": "https://www.axios.com/rss"
 }
-bias_tags = {
-    "NPR": "Left",
-    "Reuters": "Center",
-    "BBC News": "Center"
-}
-credibility_tags = {
-    "NPR": "News Source (Credentialed, Independent)",
-    "Reuters": "News Source (Credentialed, Independent)",
-    "BBC News": "News Source (Credentialed, Independent)"
-}
+bias_tags = {source: "Center" for source in rss_urls}  # Example placeholder
+credibility_tags = {source: "News Source (Credentialed, Independent)" for source in rss_urls}
 
 # --- LIVE HEADLINES ---
 today = datetime.today().strftime("%Y-%m-%d")
 entries = []
 for source, url in rss_urls.items():
     feed = feedparser.parse(url)
-    for entry in feed.entries[:5]:
+    for entry in feed.entries[:3]:
         entries.append({
             "Date": today,
             "Source": source,
@@ -94,25 +106,19 @@ def generate_warrant(title, source, theme, bias):
     except Exception as e:
         return f"Warrant unavailable: {str(e)}"
 
-# --- SIDEBAR NAVIGATION ---
+# --- NAVIGATION ---
 section = st.sidebar.radio("Navigate", ["📰 Top Headlines", "📊 Visual Trends", "📂 Archive Tools"])
 
-# --- TOP HEADLINES ---
 if section == "📰 Top Headlines":
     st.subheader("📰 Explore Live Headlines by Subject")
     if not df_today.empty:
         subject_filter = st.selectbox("Filter by Subject", ["All"] + sorted(df_today["Subject"].unique()))
-        if subject_filter != "All":
-            filtered_today = df_today[df_today["Subject"] == subject_filter]
-        else:
-            filtered_today = df_today
-
+        filtered_today = df_today[df_today["Subject"] == subject_filter] if subject_filter != "All" else df_today
         selected = st.selectbox("Choose a headline", filtered_today["Title"].tolist())
         row = filtered_today[filtered_today["Title"] == selected].iloc[0]
         st.markdown(f"#### {row['Title']}")
         st.caption(f"{row['Source']} • {row['Date']} • Bias: {row['Bias']} • Credibility: {row['Credibility']} • Subject: {row['Subject']}")
         st.markdown(f"[🔗 Read Article]({row['Link']})")
-
         if st.button("🧠 Generate Warrant"):
             with st.spinner("Generating warrant..."):
                 warrant = generate_warrant(row["Title"], row["Source"], row["Subject"], row["Bias"])
@@ -121,7 +127,6 @@ if section == "📰 Top Headlines":
     else:
         st.info("No live headlines at the moment.")
 
-# --- VISUAL TRENDS ---
 elif section == "📊 Visual Trends":
     st.subheader("📊 Subject Mentions Over Time")
     if not df_archive.empty:
@@ -129,7 +134,6 @@ elif section == "📊 Visual Trends":
         fig = px.line(trend_df, x="Date", y="Mentions", color="Subject", markers=True,
                       title="Trending Subjects by Date", template="plotly_white")
         st.plotly_chart(fig, use_container_width=True)
-
         st.markdown("#### Drill Down to Articles")
         col1, col2 = st.columns(2)
         with col1:
@@ -137,15 +141,12 @@ elif section == "📊 Visual Trends":
         with col2:
             available_dates = sorted(df_archive[df_archive["Subject"] == chosen_subject]["Date"].unique())
             chosen_date = st.selectbox("Select date", available_dates)
-
         filtered = df_archive[(df_archive["Subject"] == chosen_subject) & (df_archive["Date"] == chosen_date)]
-        if not filtered.empty:
-            for _, r in filtered.iterrows():
-                st.markdown(f"- [{r['Title']}]({r['Link']})")
+        for _, r in filtered.iterrows():
+            st.markdown(f"- [{r['Title']}]({r['Link']})")
     else:
         st.warning("No archived data available.")
 
-# --- ARCHIVE TOOLS ---
 elif section == "📂 Archive Tools":
     st.subheader("📂 Search the Archive")
     if not df_archive.empty:
@@ -156,7 +157,6 @@ elif section == "📂 Archive Tools":
             filtered_df = filtered_df[filtered_df["Subject"] == subject_filter]
         filtered_df = filtered_df[(filtered_df["Date"] >= pd.to_datetime(date_range[0])) &
                                   (filtered_df["Date"] <= pd.to_datetime(date_range[1]))]
-
         st.markdown(f"### {len(filtered_df)} Results")
         st.dataframe(filtered_df[["Date", "Title", "Source", "Subject", "Subject Confidence"]])
         st.download_button("📥 Download Archive CSV", data=filtered_df.to_csv(index=False), file_name="filtered_archive.csv")
