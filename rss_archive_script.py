@@ -1,8 +1,10 @@
 
-import feedparser, pandas as pd
+import feedparser
+import pandas as pd
 from datetime import datetime
 import os
 
+# RSS feed list (23 total)
 rss_feeds = {
     "NPR": "https://www.npr.org/rss/rss.php?id=1001",
     "Reuters": "http://feeds.reuters.com/reuters/topNews",
@@ -29,27 +31,29 @@ rss_feeds = {
     "Axios": "https://www.axios.com/rss"
 }
 
+# Updated subject keyword tagging logic
+subject_keywords = {
+    "The Executive Branch": ["president", "white house", "executive", "trump"],
+    "The Legislative Branch": ["congress", "senate", "house", "bill"],
+    "The Judicial Branch": ["court", "judge", "justice", "ruling"],
+    "Education": ["education", "school", "student", "teacher"],
+    "Technology": ["ai", "innovation", "data", "software"],
+    "Business & the Economy": ["inflation", "market", "finance", "jobs"],
+    "World Leaders": ["putin", "xi", "modi", "zelensky"],
+    "International Conflicts": ["war", "proxy", "invasion", "conflict"],
+    "Business & Commerce": ["merger", "startup", "speculation", "corporate"],
+    "The Global Economy": ["free trade", "exports", "imports", "tariffs"],
+    "Human Rights": ["rights", "freedom", "protest", "oppression"]
+}
+
 def tag_subject(title):
     title = title.lower()
-    subject_keywords = {
-        "The Executive Branch": ["president", "white house", "executive", "biden"],
-        "The Legislative Branch": ["congress", "senate", "house", "bill"],
-        "The Judicial Branch": ["court", "judge", "justice", "ruling"],
-        "Education": ["education", "school", "student", "teacher"],
-        "Technology": ["ai", "tech", "data", "software"],
-        "Business & the Economy": ["inflation", "market", "finance", "jobs"],
-        "World Leaders": ["putin", "xi", "modi", "zelensky"],
-        "International Conflicts": ["war", "missile", "invasion", "conflict"],
-        "Business & Commerce": ["merger", "startup", "stock", "company"],
-        "The Global Economy": ["global", "exports", "imports", "trade"],
-        "Human Rights": ["rights", "freedom", "protest", "oppression"]
-    }
     for subject, keywords in subject_keywords.items():
         if any(k in title for k in keywords):
             return subject
     return "General"
 
-archive_file = "rss_archive.csv"
+# Prepare today's headlines
 today = datetime.today().strftime("%Y-%m-%d")
 rows = []
 
@@ -66,11 +70,14 @@ for source, url in rss_feeds.items():
 
 df_today = pd.DataFrame(rows)
 
+# Load + merge with archive
+archive_file = "rss_archive.csv"
 if os.path.exists(archive_file):
     df_archive = pd.read_csv(archive_file)
-    df_all = pd.concat([df_archive, df_today]).drop_duplicates(subset=["Date", "Title"])
+    df_all = pd.concat([df_archive, df_today]).drop_duplicates(subset=["Date", "Title", "Link"])
 else:
     df_all = df_today
 
+# Save updated archive
 df_all.to_csv(archive_file, index=False)
 print(f"Archived {len(df_today)} new headlines.")
