@@ -1,4 +1,4 @@
-
+par
 import feedparser
 import pandas as pd
 from datetime import datetime
@@ -33,7 +33,7 @@ rss_feeds = {
 
 # Updated subject keyword tagging logic
 subject_keywords = {
-    "The Executive Branch": ["president", "white house", "executive", "trump"],
+    "The Executive Branch": ["president", "white house", "executive", "department"],
     "The Legislative Branch": ["congress", "senate", "house", "bill"],
     "The Judicial Branch": ["court", "judge", "justice", "ruling"],
     "Education": ["education", "school", "student", "teacher"],
