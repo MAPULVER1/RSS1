@@ -111,14 +111,11 @@ df = pd.DataFrame(entries)
 archive_today_articles(df)
 
 # --- LOAD ARCHIVE DATA ---
-archive_file = "rss_archive_cleaned.csv"
-if os.path.exists(archive_path):
-    archive_df = pd.read_csv(archive_path)
-    archive_df["Date"] = pd.to_datetime(archive_df["Date"], errors="coerce")
-    archive_df.dropna(subset=["Date"], inplace=True)
+archive_file = "rss_archive_cleaned.csv"  # or whatever filename you uploaded
+if os.path.exists(archive_file):
+    df_archive = pd.read_csv(archive_file)
 else:
-    archive_df = pd.DataFrame(columns=["Date", "Title", "Source", "Link", "Bias", "Credibility", "Subject"])
-
+    df_archive = pd.DataFrame(columns=["Date", "Source", "Title", "Link", "Subject"])
 # --- PLOTLY TRENDS DATA ---
 trend_df = archive_df.groupby(["Date", "Subject"]).size().reset_index(name="Mentions")
 
