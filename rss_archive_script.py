@@ -1,10 +1,9 @@
-par
+
 import feedparser
 import pandas as pd
 from datetime import datetime
 import os
 
-# RSS feed list (23 total)
 rss_feeds = {
     "NPR": "https://www.npr.org/rss/rss.php?id=1001",
     "Reuters": "http://feeds.reuters.com/reuters/topNews",
@@ -31,46 +30,53 @@ rss_feeds = {
     "Axios": "https://www.axios.com/rss"
 }
 
-# Updated subject keyword tagging logic
 subject_keywords = {
-    "The Executive Branch": ["president", "white house", "executive", "department"],
-    "The Legislative Branch": ["congress", "senate", "house", "bill"],
-    "The Judicial Branch": ["court", "judge", "justice", "ruling"],
-    "Education": ["education", "school", "student", "teacher"],
-    "Technology": ["ai", "innovation", "data", "software"],
-    "Business & the Economy": ["inflation", "market", "finance", "jobs"],
-    "World Leaders": ["putin", "xi", "modi", "zelensky"],
-    "International Conflicts": ["war", "proxy", "invasion", "conflict"],
-    "Business & Commerce": ["merger", "startup", "speculation", "corporate"],
-    "The Global Economy": ["free trade", "exports", "imports", "tariffs"],
-    "Human Rights": ["rights", "freedom", "protest", "oppression"]
+    "The Executive Branch": ["federal agency", "department", "president", "POTUS", "constitution"],
+    "The Legislative Branch": ["legislation", "committee hearing", "lawmaking", "senate"],
+    "The Judicial Branch": ["judicial review", "due process", "prima facie", "precedent", "legal review", "briefing", "due diligence"],
+    "Education": ["mathematics", "science", "engineering", "pedagogy", "curriculum", "standardized testing"],
+    "Technology": ["innovation", "AI", "hardware", "software", "algorithm", "data privacy"],
+    "Business & the Economy": ["inflation", "GDP", "monetary policy", "wall street", "main street", "bonds"],
+    "World Leaders": ["sanctions", "foreign diplomacy", "geopolitical", "multilateralism", "trade talks"],
+    "International Conflicts": ["proxy war", "trade war", "negotiations", "public opinion", "military"],
+    "Business & Commerce": ["corporate governance", "supply chain", "speculation", "assets"],
+    "The Global Economy": ["trade agreement", "import", "export", "exchange rate", "free trade", "protectionism"],
+    "Human Rights": ["civil liberties", "oppression", "censorship", "humanitarian", "food supply", "famine", "genocide"]
 }
 
 def tag_subject(title):
     title = title.lower()
     for subject, keywords in subject_keywords.items():
-        if any(k in title for k in keywords):
+        if any(k.lower() in title for k in keywords):
             return subject
     return "General"
 
-# Prepare today's headlines
+def subject_confidence(title, subject):
+    title = title.lower()
+    keywords = subject_keywords.get(subject, [])
+    matches = sum(1 for word in keywords if word.lower() in title)
+    return round(matches / len(keywords), 2) if keywords else 0.0
+
 today = datetime.today().strftime("%Y-%m-%d")
 rows = []
 
 for source, url in rss_feeds.items():
     feed = feedparser.parse(url)
     for entry in feed.entries[:10]:
+        title = entry.title
+        subject = tag_subject(title)
+        confidence = subject_confidence(title, subject)
         rows.append({
             "Date": today,
             "Source": source,
-            "Title": entry.title,
+            "Title": title,
             "Link": entry.link,
-            "Subject": tag_subject(entry.title)
+            "Subject": subject,
+            "Subject Confidence": confidence
         })
 
 df_today = pd.DataFrame(rows)
 
-# Load + merge with archive
 archive_file = "rss_archive.csv"
 if os.path.exists(archive_file):
     df_archive = pd.read_csv(archive_file)
@@ -78,6 +84,5 @@ if os.path.exists(archive_file):
 else:
     df_all = df_today
 
-# Save updated archive
 df_all.to_csv(archive_file, index=False)
 print(f"Archived {len(df_today)} new headlines.")
