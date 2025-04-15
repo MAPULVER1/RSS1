@@ -111,7 +111,7 @@ df = pd.DataFrame(entries)
 archive_today_articles(df)
 
 # --- LOAD ARCHIVE DATA ---
-archive_path = "rss_archive.csv"
+archive_file = "rss_archive_cleaned.csv"
 if os.path.exists(archive_path):
     archive_df = pd.read_csv(archive_path)
     archive_df["Date"] = pd.to_datetime(archive_df["Date"], errors="coerce")
