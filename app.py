@@ -116,6 +116,7 @@ if os.path.exists(archive_file):
     df_archive = pd.read_csv(archive_file)
 else:
     df_archive = pd.DataFrame(columns=["Date", "Source", "Title", "Link", "Subject"])
+    
 # --- PLOTLY TRENDS DATA ---
 trend_df = archive_df.groupby(["Date", "Subject"]).size().reset_index(name="Mentions")
 
