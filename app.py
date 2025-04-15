@@ -99,6 +99,8 @@ def generate_warrant(title, source, theme, bias):
 archive_file = "rss_archive.csv"
 if os.path.exists(archive_file):
     df_archive = pd.read_csv(archive_file)
+    st.write("Archive shape:", df_archive.shape)
+    st.dataframe(df_archive.head())
     df_archive["Date"] = pd.to_datetime(df_archive["Date"], errors="coerce")
 else:
     df_archive = pd.DataFrame(columns=["Date", "Source", "Title", "Link", "Subject", "Subject Confidence"])
