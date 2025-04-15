@@ -13,7 +13,7 @@ st.set_page_config(page_title="PulverLogic RSS", layout="wide")
 st.title("🗞️ PulverLogic News Intelligence Platform")
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# --- UPDATED SUBJECT KEYWORDS ---
+# --- SUBJECT KEYWORDS ---
 subject_keywords = {
     "The Executive Branch": ["president", "white house", "executive", "trump"],
     "The Legislative Branch": ["congress", "senate", "house", "bill"],
@@ -43,7 +43,7 @@ if os.path.exists(archive_file):
 else:
     df_archive = pd.DataFrame(columns=["Date", "Source", "Title", "Link", "Subject", "Subject Confidence"])
 
-# --- EXPANDED RSS SOURCES ---
+# --- FULL RSS FEEDS ---
 rss_urls = {
     "NPR": "https://www.npr.org/rss/rss.php?id=1001",
     "Reuters": "http://feeds.reuters.com/reuters/topNews",
@@ -69,10 +69,10 @@ rss_urls = {
     "Sky News": "https://feeds.skynews.com/feeds/rss/home.xml",
     "Axios": "https://www.axios.com/rss"
 }
-bias_tags = {source: "Center" for source in rss_urls}  # Example placeholder
+bias_tags = {source: "Center" for source in rss_urls}
 credibility_tags = {source: "News Source (Credentialed, Independent)" for source in rss_urls}
 
-# --- LIVE HEADLINES ---
+# --- FETCH TODAY'S HEADLINES ---
 today = datetime.today().strftime("%Y-%m-%d")
 entries = []
 for source, url in rss_urls.items():
