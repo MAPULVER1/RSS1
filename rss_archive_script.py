@@ -1,15 +1,21 @@
 
 import feedparser
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
+
+# Skip these known paywalled or unreliable RSS sources
+excluded_domains = [
+    "economist.com",
+    "ft.com",
+    "nytimes.com"
+]
 
 rss_feeds = {
     "NPR": "https://www.npr.org/rss/rss.php?id=1001",
     "Reuters": "http://feeds.reuters.com/reuters/topNews",
     "BBC News": "http://feeds.bbci.co.uk/news/rss.xml",
     "CNN": "http://rss.cnn.com/rss/edition.rss",
-    "The New York Times": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
     "The Guardian": "https://www.theguardian.com/world/rss",
     "Al Jazeera": "https://www.aljazeera.com/xml/rss/all.xml",
     "Fox News": "http://feeds.foxnews.com/foxnews/latest",
@@ -24,8 +30,6 @@ rss_feeds = {
     "Time": "http://feeds2.feedburner.com/time/topstories",
     "Newsweek": "https://www.newsweek.com/rss",
     "The Atlantic": "https://www.theatlantic.com/feed/all/",
-    "The Economist": "https://www.economist.com/the-world-this-week/rss.xml",
-    "Financial Times": "https://www.ft.com/?format=rss",
     "Sky News": "https://feeds.skynews.com/feeds/rss/home.xml",
     "Axios": "https://www.axios.com/rss"
 }
@@ -57,22 +61,36 @@ def subject_confidence(title, subject):
     matches = sum(1 for word in keywords if word.lower() in title)
     return round(matches / len(keywords), 2) if keywords else 0.0
 
+def tag_freshness(pub_date_str):
+    try:
+        pub_date = datetime.strptime(pub_date_str[:25], "%a, %d %b %Y %H:%M:%S")
+        now = datetime.utcnow()
+        if (now - pub_date) < timedelta(hours=3):
+            return "Top of News"
+    except:
+        pass
+    return "In the News"
+
 today = datetime.today().strftime("%Y-%m-%d")
 rows = []
 
 for source, url in rss_feeds.items():
+    if any(domain in url for domain in excluded_domains):
+        continue
     feed = feedparser.parse(url)
     for entry in feed.entries[:10]:
         title = entry.title
         subject = tag_subject(title)
         confidence = subject_confidence(title, subject)
+        freshness = tag_freshness(entry.get("published", ""))
         rows.append({
             "Date": today,
             "Source": source,
             "Title": title,
             "Link": entry.link,
             "Subject": subject,
-            "Subject Confidence": confidence
+            "Subject Confidence": confidence,
+            "Story Type": freshness
         })
 
 df_today = pd.DataFrame(rows)
