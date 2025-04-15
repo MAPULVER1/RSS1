@@ -1,0 +1,6 @@
+
+streamlit
+feedparser
+pandas
+openai
+matplotlib
