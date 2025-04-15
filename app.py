@@ -8,14 +8,14 @@ from datetime import datetime
 import plotly.express as px
 import os
 
-# --- CONFIG ---
+# CONFIG
 st.set_page_config(page_title="PulverLogic RSS", layout="wide")
 st.title("🗞️ PulverLogic News Intelligence Platform")
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# --- SUBJECT KEYWORDS ---
+# Subject Keyword Map
 subject_keywords = {
-    "The Executive Branch": ["president", "white house", "executive", "department"],
+    "The Executive Branch": ["president", "white house", "executive", "trump"],
     "The Legislative Branch": ["congress", "senate", "house", "bill"],
     "The Judicial Branch": ["court", "judge", "justice", "ruling"],
     "Education": ["education", "school", "student", "teacher"],
@@ -35,7 +35,7 @@ def tag_subject(title):
             return subject
     return "General"
 
-# --- ARCHIVE ---
+# ARCHIVE
 archive_file = "rss_archive.csv"
 if os.path.exists(archive_file):
     df_archive = pd.read_csv(archive_file)
@@ -43,7 +43,7 @@ if os.path.exists(archive_file):
 else:
     df_archive = pd.DataFrame(columns=["Date", "Source", "Title", "Link", "Subject", "Subject Confidence"])
 
-# --- FULL RSS FEEDS ---
+# RSS FEEDS
 rss_urls = {
     "NPR": "https://www.npr.org/rss/rss.php?id=1001",
     "Reuters": "http://feeds.reuters.com/reuters/topNews",
@@ -72,25 +72,25 @@ rss_urls = {
 bias_tags = {source: "Center" for source in rss_urls}
 credibility_tags = {source: "News Source (Credentialed, Independent)" for source in rss_urls}
 
-# --- FETCH TODAY'S HEADLINES ---
-today = datetime.today().strftime("%Y-%m-%d")
-entries = []
-for source, url in rss_urls.items():
-    feed = feedparser.parse(url)
-    for entry in feed.entries[:3]:
-        entries.append({
-            "Date": today,
-            "Source": source,
-            "Title": entry.title,
-            "Link": entry.link,
-            "Bias": bias_tags.get(source, "Unspecified"),
-            "Credibility": credibility_tags.get(source, "Unverified"),
-            "Subject": tag_subject(entry.title)
-        })
+@st.cache_data(ttl=3600)
+def fetch_live_headlines():
+    today = datetime.today().strftime("%Y-%m-%d")
+    entries = []
+    for source, url in rss_urls.items():
+        feed = feedparser.parse(url)
+        for entry in feed.entries[:3]:
+            entries.append({
+                "Date": today,
+                "Source": source,
+                "Title": entry.title,
+                "Link": entry.link,
+                "Bias": bias_tags.get(source, "Unspecified"),
+                "Credibility": credibility_tags.get(source, "Unverified"),
+                "Subject": tag_subject(entry.title)
+            })
+    return pd.DataFrame(entries)
 
-df_today = pd.DataFrame(entries)
-
-# --- WARRANT GENERATOR ---
+@st.cache_data(show_spinner=False)
 def generate_warrant(title, source, theme, bias):
     try:
         response = client.chat.completions.create(
@@ -106,7 +106,8 @@ def generate_warrant(title, source, theme, bias):
     except Exception as e:
         return f"Warrant unavailable: {str(e)}"
 
-# --- NAVIGATION ---
+df_today = fetch_live_headlines()
+
 section = st.sidebar.radio("Navigate", ["📰 Top Headlines", "📊 Visual Trends", "📂 Archive Tools"])
 
 if section == "📰 Top Headlines":
@@ -157,8 +158,8 @@ elif section == "📂 Archive Tools":
             filtered_df = filtered_df[filtered_df["Subject"] == subject_filter]
         filtered_df = filtered_df[(filtered_df["Date"] >= pd.to_datetime(date_range[0])) &
                                   (filtered_df["Date"] <= pd.to_datetime(date_range[1]))]
-        st.markdown(f"### {len(filtered_df)} Results")
-        st.dataframe(filtered_df[["Date", "Title", "Source", "Subject", "Subject Confidence"]])
+        st.markdown(f"### {len(filtered_df)} Results (max 200 shown)")
+        st.dataframe(filtered_df[["Date", "Title", "Source", "Subject", "Subject Confidence"]].head(200))
         st.download_button("📥 Download Archive CSV", data=filtered_df.to_csv(index=False), file_name="filtered_archive.csv")
     else:
         st.warning("No data found in archive.")
