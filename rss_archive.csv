@@ -1,4 +1,4 @@
-Date,Source,Title,Link,Subject
-2025-04-18,NPR,FDA to propose stricter food safety laws,https://www.npr.org/fda-food-safety,The Executive Branch
-2025-04-18,BBC News,UK announces new trade agreement with EU,https://www.bbc.com/news/eu-trade-deal,The Global Economy
-2025-04-18,CNN,President addresses education reforms,https://www.cnn.com/education-reform-speech,Education
+Date	Source	Title	Link	Subject	Subject Confidence	Story Type
+4/18/25	NPR	FDA to propose stricter food safety laws	https://www.npr.org/fda-food-safety	General	0	In the News
+4/18/25	BBC News	UK announces new trade agreement with EU	https://www.bbc.com/news/eu-trade-deal	The Global Economy	0.17	In the News
+4/18/25	CNN	President addresses education reforms	https://www.cnn.com/education-reform-speech	The Executive Branch	0.2	In the News
