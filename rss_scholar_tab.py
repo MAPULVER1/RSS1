@@ -4,6 +4,12 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
+SUBJECT_OPTIONS = [
+    "The Executive Branch", "The Legislative Branch", "The Judicial Branch",
+    "Education", "Technology", "Business & the Economy", "World Leaders",
+    "International Conflicts", "Business & Commerce", "The Global Economy", "Human Rights"
+]
+
 def rss_scholar_tab(username):
     st.markdown("### 📡 Pull a Live Article to Log")
     rss_sources = {
@@ -36,6 +42,8 @@ def rss_scholar_tab(username):
     headline_map = { h["title"]: h["link"] for h in headlines }
     selected_title = st.selectbox("Choose a Headline", list(headline_map.keys()))
 
+    selected_subject = st.selectbox("Select a Subject Tag", SUBJECT_OPTIONS)
+
     if selected_title:
         selected_link = headline_map[selected_title]
         st.markdown(f"🔗 **[Preview Article]({selected_link})**")
@@ -50,7 +58,8 @@ def rss_scholar_tab(username):
                 "notes": notes,
                 "timestamp": now,
                 "points_awarded": auto_score,
-                "admin_notes": ""
+                "admin_notes": "",
+                "subject": selected_subject
             }
             try:
                 df = pd.read_csv("scholar_logs.csv")
@@ -58,4 +67,4 @@ def rss_scholar_tab(username):
                 df = pd.DataFrame(columns=list(log_entry.keys()))
             df = pd.concat([df, pd.DataFrame([log_entry])], ignore_index=True)
             df.to_csv("scholar_logs.csv", index=False)
-            st.success("RSS log submitted successfully!")
+            st.success("✅ RSS log submitted successfully!")
