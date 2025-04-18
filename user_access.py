@@ -8,7 +8,6 @@ from datetime import datetime
 with open("users.json") as f:
     USERS = json.load(f)
 
-
 # Set session defaults immediately
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -27,7 +26,7 @@ def login():
         password = st.text_input("Password", type="password", key="login_password")
         submitted = st.form_submit_button("Login")
         if submitted:
-                                    user = USERS.get(username)
+            user = USERS.get(username)
             if user and user["password"] == password:
                 st.session_state.logged_in = True
                 st.session_state.username = username
