@@ -12,15 +12,6 @@ from datetime import datetime
 with open("users.json") as f:
     USERS = json.load(f)
 
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-if "username" not in st.session_state:
-    st.session_state.username = ""
-if "role" not in st.session_state:
-    st.session_state.role = "public"
-if "impersonating" not in st.session_state:
-    st.session_state.impersonating = None
-
 def login():
     st.subheader("🔐 Login")
     with st.form("login_form"):
@@ -60,8 +51,7 @@ def admin_dashboard():
     st.success(f"✅ Logged in as: {st.session_state.username} (Admin)")
     if st.button("Logout", key="admin_logout"):
         logout()
-    
-    # 🔢 Points Dashboard (Admin View)
+
     st.markdown("### 📈 Scholar Participation Summary")
     visual_bonus_dashboard()
 
@@ -71,15 +61,17 @@ def admin_dashboard():
         st.markdown("### 📜 All Scholar Logs")
         for i, row in df.iterrows():
             with st.expander(f"{row['user']} | {row['title']}"):
-                st.markdown(f"**Link:** [{row['link']}]({row['link']})")
-                st.markdown(f"**Notes:** {row['notes']}")
-                new_points = st.number_input("Points", min_value=0, max_value=5, value=int(row.get("points_awarded", 0)), key=f"points_{i}")
-                admin_reason = st.text_area("Admin Notes", value=row.get("admin_notes", ""), key=f"notes_{i}")
-                if st.button("💾 Save Review", key=f"save_{i}"):
-                    df.at[i, "points_awarded"] = new_points
-                    df.at[i, "admin_notes"] = admin_reason
-                    df.to_csv("scholar_logs.csv", index=False)
-                    st.success("Updated successfully.")
+                with st.form(f"admin_review_form_{i}"):
+                    st.markdown(f"**Link:** [{row['link']}]({row['link']})")
+                    st.markdown(f"**Notes:** {row['notes']}")
+                    new_points = st.number_input("Points", min_value=0, max_value=5, value=int(row.get("points_awarded", 0)), key=f"points_{i}")
+                    admin_reason = st.text_area("Admin Notes", value=row.get("admin_notes", ""), key=f"notes_{i}")
+                    save_review = st.form_submit_button("💾 Save Review")
+                    if save_review:
+                        df.at[i, "points_awarded"] = new_points
+                        df.at[i, "admin_notes"] = admin_reason
+                        df.to_csv("scholar_logs.csv", index=False)
+                        st.success("✅ Updated successfully.")
     except:
         st.warning("No logs found.")
 
@@ -93,42 +85,38 @@ def scholar_dashboard(username):
     ])
 
     with tab1:
+        with st.form("submit_log_form"):
+            article = st.text_input("Article Title", key="article_title")
+            link = st.text_input("Article Link", key="article_link")
+            notes = st.text_area("Notes / Reasoning", key="article_notes")
+            submitted = st.form_submit_button("Submit")
+            if submitted:
+                now = datetime.now().strftime("%Y-%m-%d %H:%M")
+                auto_score = 1 + (2 if len(notes) >= 100 else 0)
+                entry = {
+                    "user": username,
+                    "title": article,
+                    "link": link,
+                    "notes": notes,
+                    "timestamp": now,
+                    "points_awarded": auto_score,
+                    "admin_notes": ""
+                }
+                try:
+                    df = pd.read_csv("scholar_logs.csv")
+                except:
+                    df = pd.DataFrame(columns=list(entry.keys()))
+                df = pd.concat([df, pd.DataFrame([entry])], ignore_index=True)
+                df.to_csv("scholar_logs.csv", index=False)
+                st.success("✅ Log submitted!")
+
         if st.button("Logout", key="scholar_logout"):
             logout()
-        st.markdown("Submit your article below:")
-        article = st.text_input("Article Title", key="article_title")
-        link = st.text_input("Article Link", key="article_link")
-        notes = st.text_area("Notes / Reasoning", key="article_notes")
-        if st.button("Submit", key="submit_log"):
-            now = datetime.now().strftime("%Y-%m-%d %H:%M")
-            auto_score = 1 + (2 if len(notes) >= 100 else 0)
-            entry = {
-                "user": username, "title": article, "link": link,
-                "notes": notes, "timestamp": now,
-                "points_awarded": auto_score, "admin_notes": ""
-            }
-            try:
-                df = pd.read_csv("scholar_logs.csv")
-            except:
-                df = pd.DataFrame(columns=list(entry.keys()))
-            df = pd.concat([df, pd.DataFrame([entry])], ignore_index=True)
-            df.to_csv("scholar_logs.csv", index=False)
-            st.success("Log submitted!")
 
     with tab2:
         rss_scholar_tab(username)
 
     with tab3:
-        st.markdown("### 👁️ View Logs from Peers")
-        try:
-            df = pd.read_csv("scholar_logs.csv")
-            df["timestamp"] = pd.to_datetime(df["timestamp"])
-            peer_df = df[df["user"] != username]
-            st.dataframe(peer_df.sort_values("timestamp", ascending=False))
-        except:
-            st.info("No peer logs yet.")
-
-    with tab4:
         st.markdown("### 📚 My Archive & Feedback")
         try:
             df = pd.read_csv("scholar_logs.csv")
@@ -137,10 +125,20 @@ def scholar_dashboard(username):
             st.dataframe(user_df[["timestamp", "title", "points_awarded", "admin_notes"]].sort_values("timestamp", ascending=False))
         except:
             st.warning("No personal logs found.")
-   
+
+    with tab4:
+        try:
+            df = pd.read_csv("scholar_logs.csv")
+            df["timestamp"] = pd.to_datetime(df["timestamp"])
+            peer_df = df[df["user"] != username]
+            st.markdown("### 👥 View Logs from Peers")
+            st.dataframe(peer_df.sort_values("timestamp", ascending=False))
+        except:
+            st.info("No peer logs yet.")
+
     with tab5:
         scholar_visual_dashboard()
-   
+
     with tab6:
         peer_question_tab()
 
