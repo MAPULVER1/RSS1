@@ -46,19 +46,10 @@ def route_user():
         public_dashboard()
 
 def admin_dashboard():
-    SUBJECT_OPTIONS = [
-        "The Executive Branch", "The Legislative Branch", "The Judicial Branch",
-        "Education", "Technology", "Business & the Economy",
-        "World Leaders", "International Conflicts", "Business & Commerce",
-        "The Global Economy", "Human Rights", "General"
-    ]
-
     st.markdown("### 🎯 Bonus Points Review + Entry")
     admin_bonus_tab()
-
     st.title("🧑‍💼 Admin Dashboard")
     st.success(f"✅ Logged in as: {st.session_state.username} (Admin)")
-
     if st.button("Logout", key="admin_logout"):
         logout()
 
@@ -67,37 +58,36 @@ def admin_dashboard():
 
     try:
         df = pd.read_csv("scholar_logs.csv")
-        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", format='mixed')
-        st.markdown("### 📜 All Scholar Logs")
+        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", format="%Y-%m-%d %H:%M")
 
+        # Ensure all required columns exist
+        expected_cols = ["user", "title", "link", "notes", "timestamp", "points_awarded", "admin_notes", "subject"]
+        for col in expected_cols:
+            if col not in df.columns:
+                df[col] = ""
+
+        st.markdown("### 📜 All Scholar Logs")
         for i, row in df.iterrows():
             with st.expander(f"{row['user']} | {row['title']}"):
-                with st.form(key=f"admin_review_form_{i}"):
+                with st.form(f"admin_review_form_{i}"):
                     st.markdown(f"**Link:** [{row['link']}]({row['link']})")
                     st.markdown(f"**Notes:** {row['notes']}")
-
                     new_points = st.number_input(
                         "Points", min_value=0, max_value=5,
-                        value=int(row.get("points_awarded", 0) or 0),
+                        value=int(row.get("points_awarded", 0)),
                         key=f"points_{i}"
                     )
-
                     admin_reason = st.text_area(
                         "Admin Notes", value=row.get("admin_notes", ""),
-                        key=f"admin_notes_{i}"
+                        key=f"notes_{i}"
                     )
-
-                    current_subject = row.get("subject", "General")
-                    subject_idx = SUBJECT_OPTIONS.index(current_subject) if current_subject in SUBJECT_OPTIONS else 0
-
                     admin_subject = st.selectbox(
                         "Update Subject", SUBJECT_OPTIONS,
-                        index=subject_idx,
+                        index=SUBJECT_OPTIONS.index(row.get("subject", "General"))
+                        if row.get("subject") in SUBJECT_OPTIONS else 0,
                         key=f"subject_{i}"
                     )
-
                     submitted = st.form_submit_button("💾 Save Review")
-
                     if submitted:
                         df.at[i, "points_awarded"] = new_points
                         df.at[i, "admin_notes"] = admin_reason
@@ -105,7 +95,8 @@ def admin_dashboard():
                         df.to_csv("scholar_logs.csv", index=False)
                         st.success("✅ Updated successfully.")
     except Exception as e:
-        st.warning(f"⚠️ No logs found or error loading logs: {e}")
+        st.warning(f"Unable to load logs: {e}")
+
 
 def scholar_dashboard(username):
     st.title("🎓 Scholar Portal")
@@ -121,6 +112,7 @@ def scholar_dashboard(username):
             article = st.text_input("Article Title", key="article_title")
             link = st.text_input("Article Link", key="article_link")
             notes = st.text_area("Notes / Reasoning", key="article_notes")
+            subject = st.selectbox("Select Subject", SUBJECT_OPTIONS, key="log_subject")
             submitted = st.form_submit_button("Submit")
             if submitted:
                 now = datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -132,7 +124,8 @@ def scholar_dashboard(username):
                     "notes": notes,
                     "timestamp": now,
                     "points_awarded": auto_score,
-                    "admin_notes": ""
+                    "admin_notes": "",
+                    "subject": subject
                 }
                 try:
                     df = pd.read_csv("scholar_logs.csv")
@@ -153,16 +146,16 @@ def scholar_dashboard(username):
         st.markdown("### 📚 My Archive & Feedback")
         try:
             df = pd.read_csv("scholar_logs.csv")
-            df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", format='mixed')
+            df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", format="%Y-%m-%d %H:%M")
             user_df = df[df["user"] == username]
-            st.dataframe(user_df[["timestamp", "title", "points_awarded", "admin_notes"]].sort_values("timestamp", ascending=False))
-        except:
-            st.warning("No personal logs found.")
+            st.dataframe(user_df[["timestamp", "title", "subject", "points_awarded", "admin_notes"]].sort_values("timestamp", ascending=False))
+        except Exception as e:
+            st.warning(f"Unable to load log data: {e}")
 
     with tab4:
         try:
             df = pd.read_csv("scholar_logs.csv")
-            df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", format='mixed')
+            df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", format="%Y-%m-%d %H:%M")
             peer_df = df[df["user"] != username]
             st.markdown("### 👥 View Logs from Peers")
             st.dataframe(peer_df.sort_values("timestamp", ascending=False))
