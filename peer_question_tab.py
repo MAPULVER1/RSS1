@@ -1,26 +1,34 @@
-
 import streamlit as st
 import pandas as pd
+import os
 
 def peer_question_tab():
-    st.markdown("### 💡 Peer-Submitted Question Sets")
+    st.header("❓ Peer-Submitted Question Sets")
+
+    # Ensure the file exists
+    if not os.path.exists("bonus_logs.csv"):
+        st.info("No bonus logs found yet.")
+        return
 
     try:
         df = pd.read_csv("bonus_logs.csv")
-        df["timestamp"] = pd.to_datetime(df["timestamp"])
 
-        # Filter for entries of type "Submit a set of 10 questions"
+        # Check if 'type' column exists
+        if "type" not in df.columns:
+            st.warning("⚠️ The 'type' column is missing from bonus logs. Please ensure your CSV includes it.")
+            return
+
+        # Filter for "Submit a set of 10 questions"
         questions_df = df[df["type"] == "Submit a set of 10 questions"]
 
         if questions_df.empty:
-            st.info("No peer-submitted question sets available yet.")
+            st.info("No question sets submitted yet.")
         else:
-            for _, row in questions_df.sort_values("timestamp", ascending=False).iterrows():
-                st.markdown(f"**{row['user']}** submitted on `{row['timestamp'].date()}`")
-                questions = row["reason"].split("\n")
-                for q in questions:
-                    st.markdown(f"- {q.strip()}")
+            st.markdown("### 📚 Submitted Sets of 10 Questions")
+            for _, row in questions_df.iterrows():
+                st.markdown(f"**{row['user']}** at _{row['timestamp']}_")
+                st.markdown(f"- {row['notes']}")
                 st.markdown("---")
 
-    except FileNotFoundError:
-        st.warning("No bonus log file found yet.")
+    except Exception as e:
+        st.error(f"Unable to load question data: {e}")
