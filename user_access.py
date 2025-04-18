@@ -162,7 +162,7 @@ def scholar_dashboard(username):
     with tab4:
         try:
             df = pd.read_csv("scholar_logs.csv")
-            df["timestamp"] = pd.to_datetime(df["timestamp"])
+            df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", format="%Y-%m-%d %H:%M")
             peer_df = df[df["user"] != username]
             st.markdown("### 👥 View Logs from Peers")
             st.dataframe(peer_df.sort_values("timestamp", ascending=False))
