@@ -34,12 +34,13 @@ def admin_bonus_tab():
 
     if st.button("💾 Submit Bonus Entry"):
         now = datetime.now().strftime("%Y-%m-%d %H:%M")
-        bonus_entry = {
+        entry = {
             "user": selected_user,
-            "type": bonus_type,
             "points": points,
-            "reason": explanation,
-            "timestamp": now
+            "timestamp": now,
+            "bonus_type": bonus_type  # ✅ not "type"
+    }
+
         }
         try:
             df = pd.read_csv("bonus_logs.csv")
