@@ -1,60 +1,53 @@
-
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import json
+import os
 
 BONUS_TYPES = {
     "Current events meme": 1,
-    "Presentation on a current event": "timed",
+    "Presentation on a current event": "minute",  # Points per minute
     "Submit a set of 10 questions": 5,
-    "Extemp speech to 30+ people": 10
+    "Give an extemp speech to 30+ people": 10
 }
 
 def admin_bonus_tab():
-    st.markdown("### 🎯 Award Bonus Points to Scholars")
+    st.subheader("🎯 Add Bonus Points to Scholar")
 
-    try:
-        with open("users.json") as f:
-            usernames = [k for k, v in json.load(f).items() if v["role"] == "student"]
-    except:
-        usernames = []
+    # Load existing bonus log
+    if os.path.exists("bonus_logs.csv"):
+        df = pd.read_csv("bonus_logs.csv")
+    else:
+        df = pd.DataFrame(columns=["user", "bonus_type", "points", "notes", "timestamp"])
 
-    selected_user = st.selectbox("Choose Scholar", usernames)
+    usernames = df["user"].unique().tolist()
+    usernames.sort()
 
+    user = st.text_input("Scholar Username")
     bonus_type = st.selectbox("Bonus Type", list(BONUS_TYPES.keys()))
-    explanation = st.text_area("Reason for Bonus", placeholder="Describe the meme, presentation, or speech...")
+    notes = st.text_area("Notes / Explanation")
+    points = 0
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-    minutes = 0
-    if BONUS_TYPES[bonus_type] == "timed":
-        minutes = st.number_input("Length (in minutes)", min_value=1, max_value=120, value=5)
+    if BONUS_TYPES[bonus_type] == "minute":
+        minutes = st.number_input("Length (in minutes)", min_value=1, max_value=60, value=5)
         points = minutes
     else:
         points = BONUS_TYPES[bonus_type]
 
-    if st.button("💾 Submit Bonus Entry"):
-        now = datetime.now().strftime("%Y-%m-%d %H:%M")
-        entry = {
-            "user": selected_user,
-            "points": points,
-            "timestamp": now,
-            "bonus_type": bonus_type  # ✅ not "type"
-    }
+    if st.button("➕ Submit Bonus Entry"):
+        if not user:
+            st.error("Please enter a scholar username.")
+            return
 
-        
-        try:
-            df = pd.read_csv("bonus_logs.csv")
-        except:
-            df = pd.DataFrame(columns=list(bonus_entry.keys()))
+        bonus_entry = {
+            "user": user,
+            "bonus_type": bonus_type,
+            "points": points,
+            "notes": notes,
+            "timestamp": timestamp
+        }
 
         df = pd.concat([df, pd.DataFrame([bonus_entry])], ignore_index=True)
         df.to_csv("bonus_logs.csv", index=False)
-        st.success("Bonus points submitted and recorded.")
+        st.success(f"✅ Added {points} points for {user} ({bonus_type})")
 
-    st.markdown("### 📋 All Bonus Logs")
-    try:
-        logs = pd.read_csv("bonus_logs.csv")
-        logs["timestamp"] = pd.to_datetime(logs["timestamp"])
-        st.dataframe(logs.sort_values("timestamp", ascending=False))
-    except:
-        st.info("No bonus logs recorded yet.")
