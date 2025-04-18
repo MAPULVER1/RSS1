@@ -13,9 +13,9 @@ def peer_question_tab():
     try:
         df = pd.read_csv("bonus_logs.csv")
 
-        # Check if 'type' column exists
-        if "type" not in df.columns:
-            st.warning("⚠️ The 'type' column is missing from bonus logs. Please ensure your CSV includes it.")
+        # Check if 'bonus_type' column exists
+        if "bonus_type" not in df.columns:
+            st.warning("⚠️ The 'bonus_type' column is missing from bonus logs. Please ensure your CSV includes it.")
             return
 
         # Filter for "Submit a set of 10 questions"
@@ -32,3 +32,4 @@ def peer_question_tab():
 
     except Exception as e:
         st.error(f"Unable to load question data: {e}")
+
