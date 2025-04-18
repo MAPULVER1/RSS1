@@ -2,10 +2,11 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import json
 
 BONUS_TYPES = {
     "Current events meme": 1,
-    "Presentation on a current event": "1 point/minute",
+    "Presentation on a current event": "timed",
     "Submit a set of 10 questions": 5,
     "Extemp speech to 30+ people": 10
 }
@@ -24,9 +25,8 @@ def admin_bonus_tab():
     bonus_type = st.selectbox("Bonus Type", list(BONUS_TYPES.keys()))
     explanation = st.text_area("Reason for Bonus", placeholder="Describe the meme, presentation, or speech...")
 
-    # If it's a timed presentation, allow minute input
     minutes = 0
-    if "minute" in BONUS_TYPES[bonus_type]:
+    if BONUS_TYPES[bonus_type] == "timed":
         minutes = st.number_input("Length (in minutes)", min_value=1, max_value=120, value=5)
         points = minutes
     else:
