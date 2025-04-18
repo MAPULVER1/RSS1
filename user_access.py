@@ -7,6 +7,7 @@ from datetime import datetime
 # Load user access info
 with open("users.json") as f:
     USERS = json.load(f)
+
 st.write("🔍 Debug: Loaded USERS", USERS)
 
 # Set session defaults immediately
@@ -19,7 +20,7 @@ if "role" not in st.session_state:
 if "impersonating" not in st.session_state:
     st.session_state.impersonating = None
 
-# Login form with stable key-based inputs
+# Login form with form wrapper
 def login():
     st.subheader("🔐 Login")
     with st.form("login_form"):
@@ -35,11 +36,10 @@ def login():
                 st.session_state.username = username
                 st.session_state.role = user["role"]
                 st.experimental_rerun()
-            st.write("🧠 Debug: Session state AFTER login", dict(st.session_state))
             else:
                 st.error("Invalid credentials.")
 
-# Logout
+# Logout function
 def logout():
     st.session_state.logged_in = False
     st.session_state.username = ""
@@ -47,7 +47,7 @@ def logout():
     st.session_state.impersonating = None
     st.experimental_rerun()
 
-# Route based on session
+# Role-based routing
 def route_user():
     role = st.session_state.role
     if role == "admin":
@@ -57,10 +57,11 @@ def route_user():
     else:
         public_dashboard()
 
-# Admin view with impersonation
+# Admin dashboard view
 def admin_dashboard():
     st.title("🧑‍💼 Admin Dashboard")
-    st.success(f"Logged in as: {st.session_state.username} (Admin)")
+    st.markdown("Welcome to the administrative control center.")
+    st.success(f"✅ Logged in as: {st.session_state.username} (Admin)")
     if st.button("Logout"):
         logout()
     scholar_list = [u for u in USERS if USERS[u]["role"] == "student"]
@@ -69,10 +70,11 @@ def admin_dashboard():
         st.session_state.impersonating = selected
         scholar_dashboard(selected)
 
-# Scholar view
+# Scholar dashboard view
 def scholar_dashboard(username):
     st.title("🎓 Scholar Portal")
-    st.success(f"Logged in as: {username}")
+    st.markdown("Welcome to your personal research log area.")
+    st.success(f"✅ Logged in as: {username} (Scholar)")
     if st.button("Logout"):
         logout()
     st.markdown("Submit your article viewing below:")
@@ -97,7 +99,7 @@ def scholar_dashboard(username):
     except:
         st.info("No peer data yet.")
 
-# Public fallback
+# Public dashboard fallback
 def public_dashboard():
     st.title("🗞️ PulverLogic RSS - Public Dashboard")
     st.markdown("Welcome to the public view. Here you can see live headlines and archived visualizations.")
