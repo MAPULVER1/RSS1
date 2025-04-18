@@ -1,6 +1,6 @@
 
 import streamlit as st
-st.set_page_config(page_title="PulverLogic RSS", layout="wide")  # ✅ MUST be first
+st.set_page_config(page_title="PulverLogic RSS", layout="wide")
 
 import pandas as pd
 from datetime import datetime
@@ -16,10 +16,27 @@ if "role" not in st.session_state:
     st.session_state.role = "public"
 if "impersonating" not in st.session_state:
     st.session_state.impersonating = None
+if "show_login" not in st.session_state:
+    st.session_state.show_login = False
+
+# Show user status bar
+def status_bar():
+    if st.session_state.logged_in:
+        user = st.session_state.username
+        role = st.session_state.role
+        if role == "admin":
+            st.info(f"🧑‍💼 Logged in as: {user} (Admin)")
+        elif role == "student":
+            st.info(f"🎓 Logged in as: {user} (Scholar)")
+        else:
+            st.info(f"🔐 Logged in as: {user}")
+    else:
+        st.warning("🔓 Public Mode — You are not logged in")
+
+status_bar()
 
 # Route authenticated users to their role-based dashboards
 if st.session_state.logged_in:
-    st.write("✅ Logged in — routing to role-based view")
     route_user()
 else:
     # Public homepage view
@@ -27,6 +44,9 @@ else:
     st.markdown("Welcome to the public view. Here you can see live headlines and archived visualizations.")
 
     if st.button("🔐 Scholar/Admin Login"):
+        st.session_state.show_login = True
+
+    if st.session_state.show_login:
         login()
 
     try:
