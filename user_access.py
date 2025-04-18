@@ -80,11 +80,10 @@ def scholar_dashboard(username):
     st.title("🎓 Scholar Portal")
     st.success(f"✅ Logged in as: {username} (Scholar)")
 
-   tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
-    "📝 Submit Log", "📡 RSS Log", "📰 Today's Headlines", "👥 Peer Logs",
-    "📚 My Archive", "📊 Visualize", "💡 Peer Questions", "📈 Points Dashboard"
-])
-
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
+        "📝 Submit Log", "📡 RSS Log", "📰 Today's Headlines", "👥 Peer Logs",
+        "📚 My Archive", "📊 Visualize", "💡 Peer Questions", "📈 Points Dashboard"
+    ])
 
     with tab1:
         with st.form("submit_log_form"):
@@ -116,7 +115,7 @@ def scholar_dashboard(username):
             logout()
 
     with tab2:
-    rss_scholar_tab(username)
+        rss_scholar_tab(username)
 
     with tab3:
         rss_archive_tab()
@@ -147,6 +146,7 @@ def scholar_dashboard(username):
 
     with tab7:
         visual_bonus_dashboard()
+
 
 def public_dashboard():
     st.title("🗞️ PulverLogic RSS - Public Dashboard")
