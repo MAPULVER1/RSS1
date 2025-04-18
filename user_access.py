@@ -56,8 +56,7 @@ def route_user():
 # Admin view with impersonation
 def admin_dashboard():
     st.title("🧑‍💼 Admin Dashboard")
-    st.success(f"✅ Logged in as: {st.session_state.username} (Admin)")
-    st.button("Logout", on_click=logout)
+    st.success(f"Logged in as: {st.session_state.username} (Admin)")
     if st.button("Logout"):
         logout()
     scholar_list = [u for u in USERS if USERS[u]["role"] == "student"]
@@ -69,8 +68,7 @@ def admin_dashboard():
 # Scholar view
 def scholar_dashboard(username):
     st.title("🎓 Scholar Portal")
-    st.success(f"✅ Logged in as: {username} (Scholar)")
-    st.button("Logout", on_click=logout)
+    st.success(f"Logged in as: {username}")
     if st.button("Logout"):
         logout()
     st.markdown("Submit your article viewing below:")
