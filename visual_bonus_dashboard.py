@@ -46,7 +46,7 @@ def visual_bonus_dashboard():
                      title="🕒 Submission Activity Over Time",
                      markers=True)
 
-    line_chart = px.line(timeline, x="timestamp", y="Submissions",
+    line_chart = px.line(timeline, x="date_only", y="Submissions",
                          title="🕒 Submission Activity Over Time",
                          markers=True)
     st.plotly_chart(line_chart, use_container_width=True)
