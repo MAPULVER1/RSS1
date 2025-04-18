@@ -1,4 +1,4 @@
-
+from rss_scholar_tab import rss_scholar_tab
 import streamlit as st
 import pandas as pd
 import json
@@ -77,7 +77,7 @@ def scholar_dashboard(username):
     st.title("🎓 Scholar Portal")
     st.success(f"✅ Logged in as: {username} (Scholar)")
 
-    tab1, tab2, tab3 = st.tabs(["📝 Submit Log", "👥 Peer Logs", "📊 My Archive"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📝 Submit Log", "📡 RSS Log", "👥 Peer Logs", "📊 My Archive"])
 
     with tab1:
         if st.button("Logout", key="scholar_logout"):
@@ -103,6 +103,7 @@ def scholar_dashboard(username):
             st.success("Log submitted!")
 
     with tab2:
+    rss_scholar_tab(username)
         st.markdown("### 👁️ View Logs from Peers")
         try:
             df = pd.read_csv("scholar_logs.csv")
