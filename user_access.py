@@ -67,7 +67,7 @@ def admin_dashboard():
 
     try:
         df = pd.read_csv("scholar_logs.csv")
-        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", format='mixed')
         st.markdown("### 📜 All Scholar Logs")
 
         for i, row in df.iterrows():
@@ -153,7 +153,7 @@ def scholar_dashboard(username):
         st.markdown("### 📚 My Archive & Feedback")
         try:
             df = pd.read_csv("scholar_logs.csv")
-            df["timestamp"] = pd.to_datetime(df["timestamp"])
+            df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", format='mixed')
             user_df = df[df["user"] == username]
             st.dataframe(user_df[["timestamp", "title", "points_awarded", "admin_notes"]].sort_values("timestamp", ascending=False))
         except:
@@ -162,7 +162,7 @@ def scholar_dashboard(username):
     with tab4:
         try:
             df = pd.read_csv("scholar_logs.csv")
-            df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", format="%Y-%m-%d %H:%M")
+            df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", format='mixed')
             peer_df = df[df["user"] != username]
             st.markdown("### 👥 View Logs from Peers")
             st.dataframe(peer_df.sort_values("timestamp", ascending=False))
