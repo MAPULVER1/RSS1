@@ -8,19 +8,24 @@ from datetime import datetime
 with open("users.json") as f:
     USERS = json.load(f)
 
-# Set session defaults
+# Set session defaults immediately
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
+if "username" not in st.session_state:
     st.session_state.username = ""
+if "role" not in st.session_state:
     st.session_state.role = "public"
+if "impersonating" not in st.session_state:
     st.session_state.impersonating = None
 
-# Login form
+# Login form with stable key-based inputs
 def login():
     st.subheader("🔐 Login")
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
+    st.text_input("Username", key="login_username")
+    st.text_input("Password", type="password", key="login_password")
     if st.button("Login"):
+        username = st.session_state.login_username
+        password = st.session_state.login_password
         user = USERS.get(username)
         if user and user["password"] == password:
             st.session_state.logged_in = True
@@ -38,10 +43,9 @@ def logout():
     st.session_state.impersonating = None
     st.experimental_rerun()
 
-# Display role-specific views
+# Route based on session
 def route_user():
     role = st.session_state.role
-
     if role == "admin":
         admin_dashboard()
     elif role == "student":
@@ -61,7 +65,7 @@ def admin_dashboard():
         st.session_state.impersonating = selected
         scholar_dashboard(selected)
 
-# Scholar-only view
+# Scholar view
 def scholar_dashboard(username):
     st.title("🎓 Scholar Portal")
     st.success(f"Logged in as: {username}")
@@ -82,7 +86,6 @@ def scholar_dashboard(username):
         df.to_csv("scholar_logs.csv", index=False)
         st.success("Submission recorded.")
 
-    # Show all peer logs
     try:
         peer_df = pd.read_csv("scholar_logs.csv")
         st.subheader("🔎 Peer Contributions")
@@ -90,7 +93,7 @@ def scholar_dashboard(username):
     except:
         st.info("No peer data yet.")
 
-# Public homepage
+# Public fallback
 def public_dashboard():
     st.title("🗞️ PulverLogic RSS - Public Dashboard")
     st.markdown("Welcome to the public view. Here you can see live headlines and archived visualizations.")
