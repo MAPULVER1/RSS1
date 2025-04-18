@@ -2,6 +2,10 @@
 import pandas as pd
 import streamlit as st
 import plotly.express as px
+from subject_filter_config import SUBJECT_OPTIONS
+
+# Then in Streamlit:
+selected_subjects = st.multiselect("Filter by Subject", SUBJECT_OPTIONS)
 
 def scholar_visual_dashboard():
     st.title("📊 Scholar Participation Dashboard")
