@@ -40,7 +40,12 @@ def visual_bonus_dashboard():
                  barmode="stack")
     st.plotly_chart(fig, use_container_width=True)
 
-    timeline = logs.groupby(logs["timestamp"].dt.date).size().reset_index(name="Submissions")
+    logs["date_only"] = logs["timestamp"].dt.normalize()
+    timeline = logs.groupby("date_only").size().reset_index(name="Submissions")
+    line_chart = px.line(timeline, x="date_only", y="Submissions",
+                     title="🕒 Submission Activity Over Time",
+                     markers=True)
+
     line_chart = px.line(timeline, x="timestamp", y="Submissions",
                          title="🕒 Submission Activity Over Time",
                          markers=True)
