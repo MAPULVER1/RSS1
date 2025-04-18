@@ -103,7 +103,7 @@ def scholar_dashboard(username):
             st.success("Log submitted!")
 
     with tab2:
-    rss_scholar_tab(username)
+        rss_scholar_tab(username)
         st.markdown("### 👁️ View Logs from Peers")
         try:
             df = pd.read_csv("scholar_logs.csv")
