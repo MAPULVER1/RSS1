@@ -67,12 +67,15 @@ def admin_dashboard():
                     st.markdown(f"**Notes:** {row['notes']}")
                     new_points = st.number_input("Points", min_value=0, max_value=5, value=int(row.get("points_awarded", 0)), key=f"points_{i}")
                     admin_reason = st.text_area("Admin Notes", value=row.get("admin_notes", ""), key=f"notes_{i}")
+                    admin_subject = st.selectbox("Update Subject", SUBJECT_OPTIONS, index=SUBJECT_OPTIONS.index(row.get("subject", "General")), key=f"subject_{i}")
                     save_review = st.form_submit_button("💾 Save Review")
                     if save_review:
                         df.at[i, "points_awarded"] = new_points
                         df.at[i, "admin_notes"] = admin_reason
+                        df.at[i, "subject"] = admin_subject
                         df.to_csv("scholar_logs.csv", index=False)
                         st.success("✅ Updated successfully.")
+
     except:
         st.warning("No logs found.")
 
