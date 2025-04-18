@@ -110,27 +110,30 @@ def tag_freshness(pub_date_str):
 today = datetime.today().strftime("%Y-%m-%d")
 rows = []
 
-for source, url in rss_feeds.items():
-    feed = feedparser.parse(url)
-    for entry in feed.entries[:10]:
-        domain = urlparse(entry.link).netloc.replace("www.", "")
-        if any(excl in domain for excl in excluded_domains):
-            continue
+for entry in feed.entries[:10]:
+    title = entry.title.strip()
 
-        title = entry.title
-        subject = tag_subject(title)
-        confidence = subject_confidence(title, subject)
-        freshness = tag_freshness(entry.get("published", ""))
+    # Skip clickbait or media-junk headlines
+    if any(prefix in title.upper() for prefix in ["LIVE:", "WATCH:", "WWE", "VIDEO:", "PHOTOS:", "GALLERY:"]):
+        continue
 
-        rows.append({
-            "Date": today,
-            "Source": source,
-            "Title": title,
-            "Link": entry.link,
-            "Subject": subject,
-            "Subject Confidence": confidence,
-            "Story Type": freshness
-        })
+    domain = urlparse(entry.link).netloc.replace("www.", "")
+    if any(excl in domain for excl in excluded_domains):
+        continue
+
+    subject = tag_subject(title)
+    confidence = subject_confidence(title, subject)
+    freshness = tag_freshness(entry.get("published", ""))
+
+    rows.append({
+        "Date": today,
+        "Source": source,
+        "Title": title,
+        "Link": entry.link,
+        "Subject": subject,
+        "Subject Confidence": confidence,
+        "Story Type": freshness
+    })
 
 df_today = pd.DataFrame(rows)
 
