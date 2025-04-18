@@ -7,6 +7,7 @@ from datetime import datetime
 # Load user access info
 with open("users.json") as f:
     USERS = json.load(f)
+st.write("🔍 Debug: Loaded USERS", USERS)
 
 # Set session defaults immediately
 if "logged_in" not in st.session_state:
@@ -26,12 +27,15 @@ def login():
         password = st.text_input("Password", type="password", key="login_password")
         submitted = st.form_submit_button("Login")
         if submitted:
+            st.write("🧠 Debug: Submitted username + password:", username, password)
+            st.write("🧠 Debug: Session state BEFORE login", dict(st.session_state))
             user = USERS.get(username)
             if user and user["password"] == password:
                 st.session_state.logged_in = True
                 st.session_state.username = username
                 st.session_state.role = user["role"]
                 st.experimental_rerun()
+            st.write("🧠 Debug: Session state AFTER login", dict(st.session_state))
             else:
                 st.error("Invalid credentials.")
 
