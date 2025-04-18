@@ -41,7 +41,7 @@ def admin_bonus_tab():
             "bonus_type": bonus_type  # ✅ not "type"
     }
 
-        }
+        
         try:
             df = pd.read_csv("bonus_logs.csv")
         except:
