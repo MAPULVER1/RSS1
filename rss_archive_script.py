@@ -33,25 +33,63 @@ rss_feeds = {
 }
 
 subject_keywords = {
-    "The Executive Branch": ["federal agency", "department", "president", "POTUS", "constitution"],
-    "The Legislative Branch": ["legislation", "committee hearing", "lawmaking", "senate"],
-    "The Judicial Branch": ["judicial review", "due process", "prima facie", "precedent", "legal review", "briefing", "due diligence"],
-    "Education": ["mathematics", "science", "engineering", "pedagogy", "curriculum", "standardized testing"],
-    "Technology": ["innovation", "AI", "hardware", "software", "algorithm", "data privacy"],
-    "Business & the Economy": ["inflation", "GDP", "monetary policy", "wall street", "main street", "bonds"],
-    "World Leaders": ["sanctions", "foreign diplomacy", "geopolitical", "multilateralism", "trade talks"],
-    "International Conflicts": ["proxy war", "trade war", "negotiations", "public opinion", "military"],
-    "Business & Commerce": ["corporate governance", "supply chain", "speculation", "assets"],
-    "The Global Economy": ["trade agreement", "import", "export", "exchange rate", "free trade", "protectionism"],
-    "Human Rights": ["civil liberties", "oppression", "censorship", "humanitarian", "food supply", "famine", "genocide"]
+    "The Executive Branch": [
+        "president", "white house", "executive order", "oval office", "federal agency", 
+        "cabinet", "administration", "press secretary", "executive branch"
+    ],
+    "The Legislative Branch": [
+        "congress", "senate", "house of representatives", "bipartisan", 
+        "committee", "legislation", "bill", "lawmakers", "legislative session"
+    ],
+    "The Judicial Branch": [
+        "supreme court", "justice", "ruling", "appeals court", "lawsuit", 
+        "jurisdiction", "legal review", "judicial", "precedent", "verdict", 
+        "prosecution", "litigation", "indictment"
+    ],
+    "Education": [
+        "education", "school", "university", "college", "students", "curriculum", 
+        "teaching", "teacher", "learning", "exam", "standardized test", "academic"
+    ],
+    "Technology": [
+        "technology", "tech", "AI", "artificial intelligence", "robotics", 
+        "data", "cybersecurity", "software", "hardware", "social media", 
+        "algorithm", "computer", "internet"
+    ],
+    "Business & the Economy": [
+        "inflation", "economy", "unemployment", "jobs", "recession", "market", 
+        "federal reserve", "interest rate", "wage", "economic", "stimulus", "GDP", "monetary policy"
+    ],
+    "World Leaders": [
+        "prime minister", "president", "diplomatic", "summit", "leader", 
+        "government", "foreign policy", "chancellor", "ambassador", "head of state"
+    ],
+    "International Conflicts": [
+        "war", "military", "conflict", "tensions", "invasion", "peace talks", 
+        "allies", "bombing", "airstrike", "diplomatic dispute", "ceasefire", 
+        "troops", "border clash", "missile", "nuclear", "occupation"
+    ],
+    "Business & Commerce": [
+        "business", "corporate", "startup", "merger", "IPO", "stock market", 
+        "commerce", "industry", "manufacturing", "retail", "supply chain"
+    ],
+    "The Global Economy": [
+        "trade", "exports", "imports", "tariff", "global economy", 
+        "world bank", "IMF", "G7", "G20", "economic development", "foreign exchange"
+    ],
+    "Human Rights": [
+        "human rights", "civil rights", "freedom", "oppression", "refugee", 
+        "genocide", "famine", "displacement", "inequality", "racism", 
+        "protest", "prisoner", "asylum", "detention", "activist"
+    ]
 }
 
 def tag_subject(title):
     title = title.lower()
     for subject, keywords in subject_keywords.items():
-        if any(k.lower() in title for k in keywords):
+        if any(keyword in title for keyword in keywords):
             return subject
     return "General"
+
 
 def subject_confidence(title, subject):
     title = title.lower()
