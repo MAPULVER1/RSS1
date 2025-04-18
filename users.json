@@ -1,0 +1,17 @@
+{
+    "gabe21": {
+        "password": "abc123",
+        "role": "student",
+        "sheet": "Gabe"
+    },
+    "annalyssa": {
+        "password": "xyz789",
+        "role": "student",
+        "sheet": "Annalyssa"
+    },
+    "admin_coach": {
+        "password": "coachpass",
+        "role": "admin",
+        "sheet": "ALL"
+    }
+}
