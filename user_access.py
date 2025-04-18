@@ -46,10 +46,19 @@ def route_user():
         public_dashboard()
 
 def admin_dashboard():
+    SUBJECT_OPTIONS = [
+        "The Executive Branch", "The Legislative Branch", "The Judicial Branch",
+        "Education", "Technology", "Business & the Economy",
+        "World Leaders", "International Conflicts", "Business & Commerce",
+        "The Global Economy", "Human Rights", "General"
+    ]
+
     st.markdown("### 🎯 Bonus Points Review + Entry")
     admin_bonus_tab()
+
     st.title("🧑‍💼 Admin Dashboard")
     st.success(f"✅ Logged in as: {st.session_state.username} (Admin)")
+
     if st.button("Logout", key="admin_logout"):
         logout()
 
@@ -60,36 +69,43 @@ def admin_dashboard():
         df = pd.read_csv("scholar_logs.csv")
         df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
         st.markdown("### 📜 All Scholar Logs")
+
         for i, row in df.iterrows():
-           with st.expander(f"{row['user']} | {row['title']}"):
-                with st.form(f"admin_review_form_{i}"):
+            with st.expander(f"{row['user']} | {row['title']}"):
+                with st.form(key=f"admin_review_form_{i}"):
                     st.markdown(f"**Link:** [{row['link']}]({row['link']})")
                     st.markdown(f"**Notes:** {row['notes']}")
+
                     new_points = st.number_input(
                         "Points", min_value=0, max_value=5,
-                        value=int(row.get("points_awarded", 0)),
+                        value=int(row.get("points_awarded", 0) or 0),
                         key=f"points_{i}"
                     )
+
                     admin_reason = st.text_area(
                         "Admin Notes", value=row.get("admin_notes", ""),
-                        key=f"notes_{i}"
+                        key=f"admin_notes_{i}"
                     )
+
+                    current_subject = row.get("subject", "General")
+                    subject_idx = SUBJECT_OPTIONS.index(current_subject) if current_subject in SUBJECT_OPTIONS else 0
+
                     admin_subject = st.selectbox(
                         "Update Subject", SUBJECT_OPTIONS,
-                        index=SUBJECT_OPTIONS.index(row.get("subject", "General")) if row.get("subject") in SUBJECT_OPTIONS else 0,
+                        index=subject_idx,
                         key=f"subject_{i}"
                     )
-            
+
                     submitted = st.form_submit_button("💾 Save Review")
+
                     if submitted:
                         df.at[i, "points_awarded"] = new_points
                         df.at[i, "admin_notes"] = admin_reason
                         df.at[i, "subject"] = admin_subject
                         df.to_csv("scholar_logs.csv", index=False)
                         st.success("✅ Updated successfully.")
-
-    except:
-        st.warning("No logs found.")
+    except Exception as e:
+        st.warning(f"⚠️ No logs found or error loading logs: {e}")
 
 def scholar_dashboard(username):
     st.title("🎓 Scholar Portal")
