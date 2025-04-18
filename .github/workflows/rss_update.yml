@@ -1,0 +1,34 @@
+name: 🕒 Hourly RSS Archive Update
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # Every hour on the hour UTC
+  workflow_dispatch:
+
+jobs:
+  update-archive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install feedparser pandas
+
+      - name: 🗞 Run archive script
+        run: python rss_archive_script.py
+
+      - name: 💾 Commit updated archive
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add rss_archive.csv
+          git commit -m "🔁 Hourly archive update"
+          git push
