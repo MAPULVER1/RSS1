@@ -21,19 +21,19 @@ if "impersonating" not in st.session_state:
 # Login form with stable key-based inputs
 def login():
     st.subheader("🔐 Login")
-    st.text_input("Username", key="login_username")
-    st.text_input("Password", type="password", key="login_password")
-    if st.button("Login"):
-        username = st.session_state.login_username
-        password = st.session_state.login_password
-        user = USERS.get(username)
-        if user and user["password"] == password:
-            st.session_state.logged_in = True
-            st.session_state.username = username
-            st.session_state.role = user["role"]
-            st.experimental_rerun()
-        else:
-            st.error("Invalid credentials.")
+    with st.form("login_form"):
+        username = st.text_input("Username", key="login_username")
+        password = st.text_input("Password", type="password", key="login_password")
+        submitted = st.form_submit_button("Login")
+        if submitted:
+            user = USERS.get(username)
+            if user and user["password"] == password:
+                st.session_state.logged_in = True
+                st.session_state.username = username
+                st.session_state.role = user["role"]
+                st.experimental_rerun()
+            else:
+                st.error("Invalid credentials.")
 
 # Logout
 def logout():
