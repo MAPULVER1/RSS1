@@ -1,3 +1,5 @@
+from peer_question_tab import peer_question_tab
+from bonus_points_admin import admin_bonus_tab
 from scholar_visual_dashboard import scholar_visual_dashboard
 from rss_scholar_tab import rss_scholar_tab
 import streamlit as st
@@ -51,6 +53,8 @@ def route_user():
         public_dashboard()
 
 def admin_dashboard():
+    st.markdown("### 🎯 Bonus Points Review + Entry")
+    admin_bonus_tab()
     st.title("🧑‍💼 Admin Dashboard")
     st.success(f"✅ Logged in as: {st.session_state.username} (Admin)")
     if st.button("Logout", key="admin_logout"):
@@ -78,7 +82,10 @@ def scholar_dashboard(username):
     st.title("🎓 Scholar Portal")
     st.success(f"✅ Logged in as: {username} (Scholar)")
 
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📝 Submit Log", "📡 RSS Log", "👥 Peer Logs", "📚 My Archive", "📊 Visualize"])
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    "📝 Submit Log", "📡 RSS Log", "👥 Peer Logs",
+    "📚 My Archive", "📊 Visualize", "💡 Peer Questions"
+])
 
     with tab1:
         if st.button("Logout", key="scholar_logout"):
@@ -123,8 +130,12 @@ def scholar_dashboard(username):
             st.dataframe(user_df[["timestamp", "title", "points_awarded", "admin_notes"]].sort_values("timestamp", ascending=False))
         except:
             st.warning("No personal logs found.")
+   
     with tab5:
         scholar_visual_dashboard()
+   
+    with tab6:
+        peer_question_tab()
 
 def public_dashboard():
     st.title("🗞️ PulverLogic RSS - Public Dashboard")
