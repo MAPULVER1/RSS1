@@ -1,33 +1,37 @@
-name: Archive RSS Headlines
+name: 🔁 Hourly RSS Archive Update
 
 on:
   schedule:
-    - cron: '0 6 * * *'  # Runs every day at 6:00 AM UTC
-  workflow_dispatch:
+    - cron: '0 * * * *'  # Every hour
+  workflow_dispatch:      # Allows manual run from GitHub Actions tab
 
 jobs:
-  archive:
-    runs-on: ubuntu-22.04  # ✅ explicitly supported version
+  refresh:
+    runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout repo
         uses: actions/checkout@v3
 
-      - name: Set up Python
+      - name: 🐍 Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: 📦 Install dependencies
         run: |
-          pip install pandas feedparser
+          python -m pip install --upgrade pip
+          pip install feedparser pandas
 
-      - name: Run archiver
-        run: python rss_archive_script.py
+      - name: 🚀 Run RSS Refresh Script
+        run: python refresh_rss.py
 
-      - name: Commit updated archive
+      - name: 📝 Commit and Push if Archive Updated
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add rss_archive.csv
-          git commit -m "🔁 Daily archive update"
+          git commit -m "🔁 Hourly archive update" || echo "No changes"
           git push
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
