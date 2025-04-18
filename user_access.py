@@ -8,6 +8,8 @@ import streamlit as st
 import pandas as pd
 import json
 from datetime import datetime
+from subject_filter_config import SUBJECT_OPTIONS
+
 
 # Load user access info
 with open("users.json") as f:
