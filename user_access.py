@@ -1,3 +1,4 @@
+from rss_archive_tab import rss_archive_tab
 from visual_bonus_dashboard import visual_bonus_dashboard
 from peer_question_tab import peer_question_tab
 from bonus_points_admin import admin_bonus_tab
@@ -118,7 +119,6 @@ def scholar_dashboard(username):
     rss_scholar_tab(username)
 
     with tab3:
-        from rss_archive_tab import rss_archive_tab  # You’ll add this file
         rss_archive_tab()
         st.markdown("### 📚 My Archive & Feedback")
         try:
