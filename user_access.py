@@ -8,7 +8,6 @@ from datetime import datetime
 with open("users.json") as f:
     USERS = json.load(f)
 
-# Set session defaults
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "username" not in st.session_state:
@@ -52,55 +51,79 @@ def route_user():
 
 def admin_dashboard():
     st.title("🧑‍💼 Admin Dashboard")
-    st.markdown("Welcome to the administrative control center.")
     st.success(f"✅ Logged in as: {st.session_state.username} (Admin)")
     if st.button("Logout", key="admin_logout"):
         logout()
-    scholar_list = [u for u in USERS if USERS[u]["role"] == "student"]
-    selected = st.selectbox("👥 Test as Scholar", scholar_list)
-    if st.button("Impersonate", key="impersonate_button"):
-        st.session_state.impersonating = selected
-        scholar_dashboard(selected)
+
+    try:
+        df = pd.read_csv("scholar_logs.csv")
+        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+        st.markdown("### 📜 All Scholar Logs")
+        for i, row in df.iterrows():
+            with st.expander(f"{row['user']} | {row['title']}"):
+                st.markdown(f"**Link:** [{row['link']}]({row['link']})")
+                st.markdown(f"**Notes:** {row['notes']}")
+                new_points = st.number_input("Points", min_value=0, max_value=5, value=int(row.get("points_awarded", 0)), key=f"points_{i}")
+                admin_reason = st.text_area("Admin Notes", value=row.get("admin_notes", ""), key=f"notes_{i}")
+                if st.button("💾 Save Review", key=f"save_{i}"):
+                    df.at[i, "points_awarded"] = new_points
+                    df.at[i, "admin_notes"] = admin_reason
+                    df.to_csv("scholar_logs.csv", index=False)
+                    st.success("Updated successfully.")
+    except:
+        st.warning("No logs found.")
 
 def scholar_dashboard(username):
     st.title("🎓 Scholar Portal")
     st.success(f"✅ Logged in as: {username} (Scholar)")
 
-    tab1, tab2 = st.tabs(["📝 Submit Article Log", "📂 View Archive"])
+    tab1, tab2, tab3 = st.tabs(["📝 Submit Log", "👥 Peer Logs", "📊 My Archive"])
 
     with tab1:
         if st.button("Logout", key="scholar_logout"):
             logout()
-        st.markdown("Submit your article viewing below:")
+        st.markdown("Submit your article below:")
         article = st.text_input("Article Title", key="article_title")
         link = st.text_input("Article Link", key="article_link")
         notes = st.text_area("Notes / Reasoning", key="article_notes")
-        if st.button("Submit Log", key="submit_log"):
+        if st.button("Submit", key="submit_log"):
             now = datetime.now().strftime("%Y-%m-%d %H:%M")
-            new_entry = {"user": username, "title": article, "link": link, "notes": notes, "timestamp": now}
+            auto_score = 1 + (2 if len(notes) >= 100 else 0)
+            entry = {
+                "user": username, "title": article, "link": link,
+                "notes": notes, "timestamp": now,
+                "points_awarded": auto_score, "admin_notes": ""
+            }
             try:
                 df = pd.read_csv("scholar_logs.csv")
             except:
-                df = pd.DataFrame(columns=["user", "title", "link", "notes", "timestamp"])
-            df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
+                df = pd.DataFrame(columns=list(entry.keys()))
+            df = pd.concat([df, pd.DataFrame([entry])], ignore_index=True)
             df.to_csv("scholar_logs.csv", index=False)
-            st.success("Submission recorded.")
+            st.success("Log submitted!")
 
     with tab2:
-        st.markdown("### Scholar Log Archive")
+        st.markdown("### 👁️ View Logs from Peers")
         try:
             df = pd.read_csv("scholar_logs.csv")
-            df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
-            df = df[df["user"] == username]
-            date_range = st.date_input("Date Range", [df["timestamp"].min(), df["timestamp"].max()])
-            df = df[(df["timestamp"] >= pd.to_datetime(date_range[0])) & (df["timestamp"] <= pd.to_datetime(date_range[1]))]
-            st.dataframe(df.sort_values("timestamp", ascending=False))
-            st.download_button("📥 Download Your Logs", data=df.to_csv(index=False), file_name="my_logs.csv")
+            df["timestamp"] = pd.to_datetime(df["timestamp"])
+            peer_df = df[df["user"] != username]
+            st.dataframe(peer_df.sort_values("timestamp", ascending=False))
         except:
-            st.info("No archive entries found.")
+            st.info("No peer logs yet.")
+
+    with tab3:
+        st.markdown("### 📚 My Archive & Feedback")
+        try:
+            df = pd.read_csv("scholar_logs.csv")
+            df["timestamp"] = pd.to_datetime(df["timestamp"])
+            user_df = df[df["user"] == username]
+            st.dataframe(user_df[["timestamp", "title", "points_awarded", "admin_notes"]].sort_values("timestamp", ascending=False))
+        except:
+            st.warning("No personal logs found.")
 
 def public_dashboard():
     st.title("🗞️ PulverLogic RSS - Public Dashboard")
-    st.markdown("Welcome to the public view. Here you can see live headlines and archived visualizations.")
+    st.markdown("Welcome to the public view.")
     if st.button("Admin / Scholar Login", key="public_login_button"):
         login()
