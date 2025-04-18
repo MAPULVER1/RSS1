@@ -1,3 +1,4 @@
+from visual_bonus_dashboard import visual_bonus_dashboard
 from peer_question_tab import peer_question_tab
 from bonus_points_admin import admin_bonus_tab
 from scholar_visual_dashboard import scholar_visual_dashboard
@@ -59,6 +60,9 @@ def admin_dashboard():
     st.success(f"✅ Logged in as: {st.session_state.username} (Admin)")
     if st.button("Logout", key="admin_logout"):
         logout()
+    # 🔢 Points Dashboard (Admin View)
+    st.markdown("### 📈 Scholar Participation Summary")
+    visual_bonus_dashboard()
 
     try:
         df = pd.read_csv("scholar_logs.csv")
@@ -82,10 +86,11 @@ def scholar_dashboard(username):
     st.title("🎓 Scholar Portal")
     st.success(f"✅ Logged in as: {username} (Scholar)")
 
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+   tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "📝 Submit Log", "📡 RSS Log", "👥 Peer Logs",
-    "📚 My Archive", "📊 Visualize", "💡 Peer Questions"
+    "📚 My Archive", "📊 Visualize", "💡 Peer Questions", "📈 Points Dashboard"
 ])
+
 
     with tab1:
         if st.button("Logout", key="scholar_logout"):
@@ -136,6 +141,10 @@ def scholar_dashboard(username):
    
     with tab6:
         peer_question_tab()
+
+    with tab7:
+        visual_bonus_dashboard()
+
 
 def public_dashboard():
     st.title("🗞️ PulverLogic RSS - Public Dashboard")
