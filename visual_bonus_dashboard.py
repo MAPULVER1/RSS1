@@ -21,7 +21,7 @@ def visual_bonus_dashboard():
     regular = logs.groupby("user")["points_awarded"].sum().reset_index(name="Regular Points")
     bonus_totals = bonus.groupby("user")["points"].sum().reset_index(name="Bonus Points")
 
-    combined = pd.merge(regular, bonus_totals, on="user", how="outer").fillna(0)
+    combined = pd.merge(regular, bonus_totals, on="user", how="outer").fillna(0).infer_objects(copy=False)
     combined = combined.infer_objects(copy=False)
     combined["Total Points"] = combined["Regular Points"] + combined["Bonus Points"]
     combined = combined.sort_values("Total Points", ascending=False)
