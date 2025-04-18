@@ -1,7 +1,8 @@
 import pandas as pd
-import pandas as pd
 import streamlit as st
 import plotly.express as px
+
+pd.set_option('future.no_silent_downcasting', True)
 
 def visual_bonus_dashboard():
     st.title("📊 Total Participation: Regular + Bonus")
