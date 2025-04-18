@@ -61,15 +61,27 @@ def admin_dashboard():
         df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
         st.markdown("### 📜 All Scholar Logs")
         for i, row in df.iterrows():
-            with st.expander(f"{row['user']} | {row['title']}"):
+           with st.expander(f"{row['user']} | {row['title']}"):
                 with st.form(f"admin_review_form_{i}"):
                     st.markdown(f"**Link:** [{row['link']}]({row['link']})")
                     st.markdown(f"**Notes:** {row['notes']}")
-                    new_points = st.number_input("Points", min_value=0, max_value=5, value=int(row.get("points_awarded", 0)), key=f"points_{i}")
-                    admin_reason = st.text_area("Admin Notes", value=row.get("admin_notes", ""), key=f"notes_{i}")
-                    admin_subject = st.selectbox("Update Subject", SUBJECT_OPTIONS, index=SUBJECT_OPTIONS.index(row.get("subject", "General")), key=f"subject_{i}")
-                    save_review = st.form_submit_button("💾 Save Review")
-                    if save_review:
+                    new_points = st.number_input(
+                        "Points", min_value=0, max_value=5,
+                        value=int(row.get("points_awarded", 0)),
+                        key=f"points_{i}"
+                    )
+                    admin_reason = st.text_area(
+                        "Admin Notes", value=row.get("admin_notes", ""),
+                        key=f"notes_{i}"
+                    )
+                    admin_subject = st.selectbox(
+                        "Update Subject", SUBJECT_OPTIONS,
+                        index=SUBJECT_OPTIONS.index(row.get("subject", "General")) if row.get("subject") in SUBJECT_OPTIONS else 0,
+                        key=f"subject_{i}"
+                    )
+            
+                    submitted = st.form_submit_button("💾 Save Review")
+                    if submitted:
                         df.at[i, "points_awarded"] = new_points
                         df.at[i, "admin_notes"] = admin_reason
                         df.at[i, "subject"] = admin_subject
