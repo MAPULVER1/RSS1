@@ -4,61 +4,62 @@ from datetime import datetime
 import os
 import json
 
+# Load user data
+with open("users.json") as f:
+    USERS = json.load(f)
+scholars = [user for user, data in USERS.items() if data["role"] == "student"]
+
 BONUS_TYPES = {
     "Current events meme": 1,
-    "Presentation on a current event": "minute",  # Points per minute
+    "Presentation on a current event (time-based)": "minute",
     "Submit a set of 10 questions": 5,
     "Give an extemp speech to 30+ people": 10
 }
 
 def admin_bonus_tab():
-    st.subheader("🎯 Add Bonus Points to Scholar")
+    st.subheader("🎁 Award Bonus Points (Admins Only)")
 
-    # Check for admin session
-    if st.session_state.get("role") != "admin":
-        st.error("Access denied. Only admins can submit bonus entries.")
+    if st.session_state.role != "admin":
+        st.warning("Only admins can award bonus points.")
         return
 
-    # Load users for dropdown
-    usernames = []
-    try:
-        with open("users.json") as f:
-            user_data = json.load(f)
-            usernames = sorted([u for u, info in user_data.items() if info.get("role") == "student"])
-    except:
-        st.warning("Unable to load users.json or parse student list.")
+    selected_user = st.selectbox("👤 Select Scholar", scholars)
 
-    if not usernames:
-        st.warning("⚠️ No student users found.")
-        return
+    bonus_type = st.selectbox("🏅 Bonus Activity Type", list(BONUS_TYPES.keys()))
 
-    # Load existing bonus log
-    if os.path.exists("bonus_logs.csv"):
-        df = pd.read_csv("bonus_logs.csv")
-    else:
-        df = pd.DataFrame(columns=["user", "bonus_type", "points", "notes", "timestamp"])
+    notes = st.text_area("📝 Optional Notes (visible to Admins + Scholar)", max_chars=300)
 
-    user = st.selectbox("Select Scholar Username", usernames)
-    bonus_type = st.selectbox("Bonus Type", list(BONUS_TYPES.keys()))
-    notes = st.text_area("Notes / Explanation")
-    points = 0
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-
-    if BONUS_TYPES[bonus_type] == "minute":
-        minutes = st.number_input("Length (in minutes)", min_value=1, max_value=60, value=5)
+    points = BONUS_TYPES[bonus_type]
+    if points == "minute":
+        minutes = st.number_input("⏱️ Duration in minutes", min_value=1, max_value=120)
         points = minutes
-    else:
-        points = BONUS_TYPES[bonus_type]
 
-    if st.button("➕ Submit Bonus Entry"):
-        bonus_entry = {
-            "user": user,
+    if st.button("➕ Add Bonus Points Entry"):
+        new_entry = {
+            "user": selected_user,
             "bonus_type": bonus_type,
             "points": points,
             "notes": notes,
-            "timestamp": timestamp
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "admin": st.session_state.username
         }
 
-        df = pd.concat([df, pd.DataFrame([bonus_entry])], ignore_index=True)
+        try:
+            df = pd.read_csv("bonus_logs.csv")
+        except FileNotFoundError:
+            df = pd.DataFrame(columns=new_entry.keys())
+
+        df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
         df.to_csv("bonus_logs.csv", index=False)
-        st.success(f"✅ Added {points} points for {user} ({bonus_type})")
+        st.success(f"✅ Bonus points for {selected_user} recorded!")
+
+    st.divider()
+    st.markdown("### 📜 Bonus Log History")
+
+    try:
+        df = pd.read_csv("bonus_logs.csv")
+        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+        st.dataframe(df.sort_values("timestamp", ascending=False), use_container_width=True)
+    except:
+        st.info("No bonus point logs found yet.")
+
