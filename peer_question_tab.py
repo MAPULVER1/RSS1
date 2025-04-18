@@ -19,7 +19,7 @@ def peer_question_tab():
             return
 
         # Filter for "Submit a set of 10 questions"
-        questions_df = df[df["type"] == "Submit a set of 10 questions"]
+        questions_df = df[df["bonus_type"] == "Submit a set of 10 questions"]
 
         if questions_df.empty:
             st.info("No question sets submitted yet.")
