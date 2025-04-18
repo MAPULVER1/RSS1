@@ -1,14 +1,13 @@
-
 import feedparser
 import pandas as pd
 from datetime import datetime, timedelta
 import os
+from urllib.parse import urlparse
+from dateutil import parser as dateparser
 
-# Skip these known paywalled or unreliable RSS sources
+# Skip known paywalled or unreliable domains
 excluded_domains = [
-    "economist.com",
-    "ft.com",
-    "nytimes.com"
+    "economist.com", "ft.com", "nytimes.com", "wsj.com", "bloomberg.com"
 ]
 
 rss_feeds = {
@@ -19,7 +18,6 @@ rss_feeds = {
     "The Guardian": "https://www.theguardian.com/world/rss",
     "Al Jazeera": "https://www.aljazeera.com/xml/rss/all.xml",
     "Fox News": "http://feeds.foxnews.com/foxnews/latest",
-    "Bloomberg": "https://www.bloomberg.com/feed/podcast/etf-report.xml",
     "The Washington Post": "http://feeds.washingtonpost.com/rss/national",
     "ABC News": "https://abcnews.go.com/abcnews/topstories",
     "CBS News": "https://www.cbsnews.com/latest/rss/main",
@@ -63,7 +61,7 @@ def subject_confidence(title, subject):
 
 def tag_freshness(pub_date_str):
     try:
-        pub_date = datetime.strptime(pub_date_str[:25], "%a, %d %b %Y %H:%M:%S")
+        pub_date = dateparser.parse(pub_date_str)
         now = datetime.utcnow()
         if (now - pub_date) < timedelta(hours=3):
             return "Top of News"
@@ -75,14 +73,17 @@ today = datetime.today().strftime("%Y-%m-%d")
 rows = []
 
 for source, url in rss_feeds.items():
-    if any(domain in url for domain in excluded_domains):
-        continue
     feed = feedparser.parse(url)
     for entry in feed.entries[:10]:
+        domain = urlparse(entry.link).netloc.replace("www.", "")
+        if any(excl in domain for excl in excluded_domains):
+            continue
+
         title = entry.title
         subject = tag_subject(title)
         confidence = subject_confidence(title, subject)
         freshness = tag_freshness(entry.get("published", ""))
+
         rows.append({
             "Date": today,
             "Source": source,
@@ -103,4 +104,5 @@ else:
     df_all = df_today
 
 df_all.to_csv(archive_file, index=False)
-print(f"Archived {len(df_today)} new headlines.")
+print(f"✅ Archived {len(df_today)} new headlines on {today}.")
+
