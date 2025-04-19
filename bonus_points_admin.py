@@ -1,9 +1,14 @@
-import streamlit as st
+
 import pandas as pd
 from datetime import datetime
-import os
 import json
 import subprocess
+import streamlit as st
+import os
+
+if "GITHUB_TOKEN" in st.secrets:
+    os.environ["GITHUB_TOKEN"] = st.secrets["GITHUB_TOKEN"]
+
 
 # Load user data
 with open("users.json") as f:
