@@ -19,16 +19,19 @@ BONUS_TYPES = {
 
 def auto_git_push():
     try:
-        subprocess.run(["git", "add", "."], check=True)
-        result = subprocess.run(["git", "commit", "-m", "🔄 Auto log update from Streamlit app"], capture_output=True, text=True)
+        username = st.secrets["github_username"]
+        token = st.secrets["github_token"]
+        repo = st.secrets["github_repo"]
+        remote_url = f"https://{username}:{token}@github.com/{username}/{repo}.git"
 
-        if "nothing to commit" in result.stderr.lower():
-            st.info("ℹ️ No changes detected to commit.")
-        else:
-            subprocess.run(["git", "push"], check=True)
-            st.success("🚀 Changes pushed to GitHub.")
+        subprocess.run(["git", "remote", "set-url", "origin", remote_url], check=True)
+        subprocess.run(["git", "add", "."], check=True)
+        subprocess.run(["git", "commit", "-m", "🔄 Auto log update from Streamlit app"], check=True)
+        subprocess.run(["git", "push", "origin", "main"], check=True)
+
+        st.success("✅ GitHub push complete.")
     except Exception as e:
-        st.warning(f"⚠️ Git push failed: {e}")
+        st.warning(f"Auto push failed: {e}")
 
 def admin_bonus_tab():
     st.subheader("🎁 Award Bonus Points (Admins Only)")
@@ -63,9 +66,9 @@ def admin_bonus_tab():
 
         df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
         df.to_csv("bonus_logs.csv", index=False)
+        st.success(f"✅ Bonus points for {selected_user} recorded!")
 
         auto_git_push()
-        st.success(f"✅ Bonus points for {selected_user} recorded!")
 
     st.divider()
     st.markdown("### 📜 Bonus Log History")
@@ -76,4 +79,3 @@ def admin_bonus_tab():
         st.dataframe(df.sort_values("timestamp", ascending=False), use_container_width=True)
     except:
         st.info("No bonus point logs found yet.")
-
