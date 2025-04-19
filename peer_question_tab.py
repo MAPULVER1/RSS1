@@ -1,8 +1,11 @@
 
-import streamlit as st
 import pandas as pd
-import os
 import subprocess
+import streamlit as st
+import os
+
+if "GITHUB_TOKEN" in st.secrets:
+    os.environ["GITHUB_TOKEN"] = st.secrets["GITHUB_TOKEN"]
 
 def auto_git_push():
     try:
