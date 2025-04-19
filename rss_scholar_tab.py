@@ -1,8 +1,14 @@
 import feedparser
-import streamlit as st
 import pandas as pd
 from datetime import datetime
 import subprocess
+import streamlit as st
+import os
+
+if "GITHUB_TOKEN" in st.secrets:
+    os.environ["GITHUB_TOKEN"] = st.secrets["GITHUB_TOKEN"]
+
+
 
 SUBJECT_OPTIONS = [
     "The Executive Branch", "The Legislative Branch", "The Judicial Branch",
