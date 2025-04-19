@@ -1,6 +1,24 @@
+
 import streamlit as st
 import pandas as pd
 import os
+import subprocess
+
+def auto_git_push():
+    try:
+        username = st.secrets["github_username"]
+        token = st.secrets["github_token"]
+        repo = st.secrets["github_repo"]
+        remote_url = f"https://{username}:{token}@github.com/{username}/{repo}.git"
+
+        subprocess.run(["git", "remote", "set-url", "origin", remote_url], check=True)
+        subprocess.run(["git", "add", "."], check=True)
+        subprocess.run(["git", "commit", "-m", "🔄 Auto update from peer question tab"], check=True)
+        subprocess.run(["git", "push", "origin", "main"], check=True)
+
+        st.success("✅ GitHub push complete.")
+    except Exception as e:
+        st.warning(f"Auto push failed: {e}")
 
 def peer_question_tab():
     st.header("❓ Peer-Submitted Question Sets")
@@ -15,7 +33,7 @@ def peer_question_tab():
 
         # Check if 'bonus_type' column exists
         if "bonus_type" not in df.columns:
-            st.warning("⚠️ The 'bonus_type' column is missing from bonus logs. Please ensure your CSV includes it.")
+            st.warning("⚠️ The 'bonus_type' column is missing from bonus logs.")
             return
 
         # Filter for "Submit a set of 10 questions"
@@ -32,4 +50,3 @@ def peer_question_tab():
 
     except Exception as e:
         st.error(f"Unable to load question data: {e}")
-
