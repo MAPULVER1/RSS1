@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 import os
 import json
+import subprocess
 
 # Load user data
 with open("users.json") as f:
@@ -16,6 +17,14 @@ BONUS_TYPES = {
     "Give an extemp speech to 30+ people": 10
 }
 
+def auto_git_push():
+    try:
+        subprocess.run(["git", "add", "."], check=True)
+        subprocess.run(["git", "commit", "-m", "🔄 Auto log update from Streamlit app"], check=True)
+        subprocess.run(["git", "push"], check=True)
+    except Exception as e:
+        st.warning(f"Auto push failed: {e}")
+
 def admin_bonus_tab():
     st.subheader("🎁 Award Bonus Points (Admins Only)")
 
@@ -24,9 +33,7 @@ def admin_bonus_tab():
         return
 
     selected_user = st.selectbox("👤 Select Scholar", scholars)
-
     bonus_type = st.selectbox("🏅 Bonus Activity Type", list(BONUS_TYPES.keys()))
-
     notes = st.text_area("📝 Optional Notes (visible to Admins + Scholar)", max_chars=300)
 
     points = BONUS_TYPES[bonus_type]
@@ -51,6 +58,8 @@ def admin_bonus_tab():
 
         df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
         df.to_csv("bonus_logs.csv", index=False)
+
+        auto_git_push()
         st.success(f"✅ Bonus points for {selected_user} recorded!")
 
     st.divider()
