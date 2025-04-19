@@ -4,11 +4,15 @@ from peer_question_tab import peer_question_tab
 from bonus_points_admin import admin_bonus_tab
 from scholar_visual_dashboard import scholar_visual_dashboard
 from rss_scholar_tab import rss_scholar_tab
-import streamlit as st
 import pandas as pd
 import json
 from datetime import datetime
 from subject_filter_config import SUBJECT_OPTIONS
+import streamlit as st
+import os
+
+if "GITHUB_TOKEN" in st.secrets:
+    os.environ["GITHUB_TOKEN"] = st.secrets["GITHUB_TOKEN"]
 
 
 # Load user access info
