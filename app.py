@@ -4,6 +4,11 @@ st.set_page_config(page_title="PulverLogic RSS", layout="wide")
 import pandas as pd
 from datetime import datetime
 from user_access import login, logout, route_user
+import os
+
+# Load GitHub token from Streamlit secrets
+if "GITHUB_TOKEN" in st.secrets:
+    os.environ["GITHUB_TOKEN"] = st.secrets["GITHUB_TOKEN"]
 
 # -----------------------
 # SESSION STATE SETUP
