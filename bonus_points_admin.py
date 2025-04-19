@@ -20,10 +20,15 @@ BONUS_TYPES = {
 def auto_git_push():
     try:
         subprocess.run(["git", "add", "."], check=True)
-        subprocess.run(["git", "commit", "-m", "🔄 Auto log update from Streamlit app"], check=True)
-        subprocess.run(["git", "push"], check=True)
+        result = subprocess.run(["git", "commit", "-m", "🔄 Auto log update from Streamlit app"], capture_output=True, text=True)
+
+        if "nothing to commit" in result.stderr.lower():
+            st.info("ℹ️ No changes detected to commit.")
+        else:
+            subprocess.run(["git", "push"], check=True)
+            st.success("🚀 Changes pushed to GitHub.")
     except Exception as e:
-        st.warning(f"Auto push failed: {e}")
+        st.warning(f"⚠️ Git push failed: {e}")
 
 def admin_bonus_tab():
     st.subheader("🎁 Award Bonus Points (Admins Only)")
