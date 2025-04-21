@@ -5,6 +5,8 @@ import json
 import subprocess
 import streamlit as st
 import os
+from safe_git_auto_push import safe_git_auto_push
+
 
 if "GITHUB_TOKEN" in st.secrets:
     os.environ["GITHUB_TOKEN"] = st.secrets["GITHUB_TOKEN"]
@@ -68,9 +70,9 @@ def admin_bonus_tab():
             df = pd.read_csv("bonus_logs.csv")
         except FileNotFoundError:
             df = pd.DataFrame(columns=new_entry.keys())
-
         df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
         df.to_csv("bonus_logs.csv", index=False)
+        safe_git_auto_push()
         st.success(f"✅ Bonus points for {selected_user} recorded!")
 
         auto_git_push()
