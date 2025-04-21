@@ -7,10 +7,11 @@ from subject_filter_config import SUBJECT_OPTIONS
 def scholar_visual_dashboard(df):
     st.title("📚 Scholar Log Overview")
 
+    # Raw Log Display
     st.write("### ✍️ Raw Scholar Log")
     st.dataframe(df)
 
-    # Subject Filter
+    # Subject Filtering
     if "subject" in df.columns:
         selected_subjects = st.multiselect("🗂️ Filter by Subject", SUBJECT_OPTIONS)
         if selected_subjects:
@@ -18,13 +19,13 @@ def scholar_visual_dashboard(df):
     else:
         st.info("📘 Subject filtering is unavailable because no 'subject' column is present in the data.")
 
-    # Points Awarded Histogram
+    # Points Awarded Chart
     if "points_awarded" in df.columns:
         st.write("### 🎯 Points Awarded")
         points_chart = px.histogram(df, x="points_awarded", nbins=10, title="Distribution of Points")
         st.plotly_chart(points_chart, use_container_width=True)
 
-    # Top Logged Subjects Pie Chart
+    # Subject Pie Chart
     if "subject" in df.columns:
         top_subjects = df["subject"].value_counts().reset_index()
         top_subjects.columns = ["Subject", "Mentions"]
@@ -38,7 +39,7 @@ def scholar_visual_dashboard(df):
     else:
         st.info("📊 Subject chart skipped — no 'subject' data found in log.")
 
-    # Feedback Notes
+    # Admin Feedback Notes
     if "admin_notes" in df.columns:
         st.write("### 📝 Admin Feedback Notes")
         feedback_df = df[df["admin_notes"].notnull()][["user", "title", "admin_notes"]]
