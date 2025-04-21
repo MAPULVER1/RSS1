@@ -100,6 +100,9 @@ def admin_dashboard():
                         df.at[i, "admin_notes"] = admin_reason
                         df.at[i, "subject"] = admin_subject
                         df.to_csv("scholar_logs.csv", index=False)
+    except Exception as e:
+        print(f'⚠️ Git or save failed: {e}')
+safe_git_commit("🔄 Log update from user_access.py")
 safe_git_commit("🔄 Scholar log update")
                         st.success("✅ Updated successfully.")
     except Exception as e:
@@ -141,6 +144,9 @@ def scholar_dashboard(username):
                     df = pd.DataFrame(columns=list(entry.keys()))
                 df = pd.concat([df, pd.DataFrame([entry])], ignore_index=True)
                 df.to_csv("scholar_logs.csv", index=False)
+    except Exception as e:
+        print(f'⚠️ Git or save failed: {e}')
+safe_git_commit("🔄 Log update from user_access.py")
 safe_git_commit("🔄 Scholar log update")
                 st.success("✅ Log submitted!")
 
