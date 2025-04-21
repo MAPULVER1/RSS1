@@ -173,8 +173,8 @@ def scholar_dashboard(username):
         df = pd.read_csv("scholar_logs.csv")
         scholar_visual_dashboard(df)
             with tab6:
+    with tab6:
         peer_question_tab()
-
     with tab7:
         visual_bonus_dashboard()
 
