@@ -1,24 +1,20 @@
-import pandas as pd
-from admin_dashboard import admin_dashboard
 from rss_archive_tab import rss_archive_tab
 from visual_bonus_dashboard import visual_bonus_dashboard
 from peer_question_tab import peer_question_tab
 from bonus_points_admin import admin_bonus_tab
 from scholar_visual_dashboard import scholar_visual_dashboard
 from rss_scholar_tab import rss_scholar_tab
-from data_loader import load_scholar_logs, get_user_logs, get_summary
+import pandas as pd
 import json
 from datetime import datetime
 from subject_filter_config import SUBJECT_OPTIONS
 import streamlit as st
 import os
+from git_utils import safe_git_commit
 
 if "GITHUB_TOKEN" in st.secrets:
     os.environ["GITHUB_TOKEN"] = st.secrets["GITHUB_TOKEN"]
 
-df = load_scholar_logs()
-user_df = get_user_logs("gabe", df)
-summary_df = get_summary(df)
 
 # Load user access info
 with open("users.json") as f:
@@ -104,6 +100,7 @@ def admin_dashboard():
                         df.at[i, "admin_notes"] = admin_reason
                         df.at[i, "subject"] = admin_subject
                         df.to_csv("scholar_logs.csv", index=False)
+safe_git_commit("🔄 Scholar log update")
                         st.success("✅ Updated successfully.")
     except Exception as e:
         st.warning(f"Unable to load logs: {e}")
@@ -144,6 +141,7 @@ def scholar_dashboard(username):
                     df = pd.DataFrame(columns=list(entry.keys()))
                 df = pd.concat([df, pd.DataFrame([entry])], ignore_index=True)
                 df.to_csv("scholar_logs.csv", index=False)
+safe_git_commit("🔄 Scholar log update")
                 st.success("✅ Log submitted!")
 
         if st.button("Logout", key="scholar_logout"):
@@ -174,11 +172,11 @@ def scholar_dashboard(username):
             st.info("No peer logs yet.")
 
     with tab5:
-        df = pd.read_csv("scholar_logs.csv")
-        scholar_visual_dashboard(df)
-           
+        scholar_visual_dashboard()
+
     with tab6:
         peer_question_tab()
+
     with tab7:
         visual_bonus_dashboard()
 
