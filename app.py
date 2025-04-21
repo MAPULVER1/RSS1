@@ -2,6 +2,7 @@ import streamlit as st
 st.set_page_config(page_title="PulverLogic RSS", layout="wide")
 
 import pandas as pd
+import feedparser
 from datetime import datetime
 from user_access import login, logout, route_user
 import os
@@ -52,13 +53,30 @@ except Exception as e:
     df_archive = pd.DataFrame(columns=["Date", "Source", "Title", "Link", "Subject"])
 
 # -----------------------
+# RSS PARSER FUNCTION
+# -----------------------
+def fetch_live_rss(feed_url):
+    feed = feedparser.parse(feed_url)
+    entries = []
+
+    for entry in feed.entries:
+        entries.append({
+            "Date": datetime.now().strftime("%Y-%m-%d"),
+            "Source": feed.feed.get("title", "Unknown Source"),
+            "Title": entry.get("title", "No title"),
+            "Link": entry.get("link", "No link"),
+            "Subject": "General"
+        })
+    return pd.DataFrame(entries)
+
+# -----------------------
 # ROUTE LOGIC
 # -----------------------
 if st.session_state.logged_in:
     route_user()
 else:
     # Public homepage view
-    st.title("🗞️ PulverLogic RSS - Public Dashboard")
+    st.title("🗾️ PulverLogic RSS - Public Dashboard")
     st.markdown("Welcome to the public view. Here you can see live headlines and archived visualizations.")
 
     if st.button("🔐 Scholar/Admin Login"):
@@ -67,10 +85,30 @@ else:
     if st.session_state.show_login:
         login()
 
+    # Sidebar RSS Fetcher
+    with st.sidebar:
+        st.header("🔄 Live RSS Fetch")
+        feed_url = st.text_input("RSS Feed URL", value="https://feeds.feedburner.com/TechCrunch/")
+        if st.button("📅 Fetch Feed"):
+            df_live = fetch_live_rss(feed_url)
+            st.session_state["live_rss"] = df_live
+
+    # Show live RSS results
+    if "live_rss" in st.session_state:
+        st.subheader("🔞 Live RSS Feed Preview")
+        st.dataframe(st.session_state["live_rss"])
+
+        if st.button("📂 Save to Archive"):
+            df_archive = pd.concat([df_archive, st.session_state["live_rss"]], ignore_index=True)
+            df_archive.to_csv(archive_file, index=False)
+            st.success("Feed saved to archive!")
+
+    # Show today's archive sample
     if not df_archive.empty:
         df_today = df_archive[df_archive["Date"].dt.strftime("%Y-%m-%d") == today_str]
         st.subheader("📍 Today’s Headlines (Public Sample)")
         st.dataframe(df_today[["Date", "Title", "Source", "Subject"]].head(10))
     else:
         st.info("No public archive found.")
+
 
