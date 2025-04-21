@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import os
 from urllib.parse import urlparse
 from dateutil import parser as dateparser
+from safe_git_auto_push import safe_git_auto_push
 
 # Skip known paywalled or unreliable domains
 excluded_domains = [
@@ -145,5 +146,7 @@ else:
     df_all = df_today
 
 df_all.to_csv(archive_file, index=False)
+safe_git_auto_push()
+
 print(f"✅ Archived {len(df_today)} new headlines on {today}.")
 
