@@ -1,10 +1,10 @@
+import pandas as pd
 from rss_archive_tab import rss_archive_tab
 from visual_bonus_dashboard import visual_bonus_dashboard
 from peer_question_tab import peer_question_tab
 from bonus_points_admin import admin_bonus_tab
 from scholar_visual_dashboard import scholar_visual_dashboard
 from rss_scholar_tab import rss_scholar_tab
-import pandas as pd
 import json
 from datetime import datetime
 from subject_filter_config import SUBJECT_OPTIONS
@@ -167,12 +167,11 @@ def scholar_dashboard(username):
             st.dataframe(peer_df.sort_values("timestamp", ascending=False))
         except:
             st.info("No peer logs yet.")
-    
+
     with tab5:
-        import pandas as pd
         df = pd.read_csv("scholar_logs.csv")
         scholar_visual_dashboard(df)
-
+            with tab6:
     with tab6:
         peer_question_tab()
     with tab7:
