@@ -33,7 +33,13 @@ def get_user_logs(user, df=None):
 def get_summary(df=None):
     if df is None:
         df = load_scholar_logs()
-    df["Total Points"] = df["points_awarded"].fillna(0) + df["bonus_points"].fillna(0)
+
+    # Ensure numeric types
+    df["points_awarded"] = pd.to_numeric(df["points_awarded"], errors="coerce").fillna(0)
+    df["bonus_points"] = pd.to_numeric(df["bonus_points"], errors="coerce").fillna(0)
+
+    df["Total Points"] = df["points_awarded"] + df["bonus_points"]
+
     return df.groupby("user").agg(
         Logs_Submitted=("title", "count"),
         Total_Points=("Total Points", "sum"),
