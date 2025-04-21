@@ -25,7 +25,7 @@ def auto_git_push():
 
         subprocess.run(["git", "remote", "set-url", "origin", remote_url], check=True)
         subprocess.run(["git", "add", "."], check=True)
-        subprocess.run(["git", "commit", "-m", "🔄 Auto log update from RSS log"], check=True)
+        safe_git_auto_push()
         subprocess.run(["git", "push", "origin", "main"], check=True)
 
         st.success("✅ GitHub push complete.")
