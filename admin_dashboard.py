@@ -1,9 +1,11 @@
 
 import streamlit as st
 import pandas as pd
+from data_loader import load_scholar_logs, get_user_logs, get_summary
 from visual_bonus_dashboard import visual_bonus_dashboard
 from scholar_visual_dashboard import scholar_visual_dashboard
 from peer_question_tab import peer_question_tab
+
 
 def summarize_student_performance(df):
     df["Total Points"] = df["points_awarded"].fillna(0) + df.get("bonus_points", 0).fillna(0)
@@ -14,6 +16,9 @@ def summarize_student_performance(df):
         Bonus_Points=("bonus_points", "sum"),
         Top_Subject=("subject", lambda x: x.mode()[0] if not x.mode().empty else "N/A")
     ).reset_index()
+df = load_scholar_logs()
+user_df = get_user_logs("gabe", df)
+summary_df = get_summary(df)
 
 def admin_dashboard():
     st.title("🧑‍💼 Admin Dashboard")
