@@ -7,11 +7,13 @@ import streamlit as st
 import os
 from data_loader import load_scholar_logs, get_user_logs, get_summary
 from safe_git_auto_push import safe_git_auto_push
+from git_utils import safe_git_commit
 
+safe_git_commit("🔄 Auto log update from RSS")
 
 if "GITHUB_TOKEN" in st.secrets:
     os.environ["GITHUB_TOKEN"] = st.secrets["GITHUB_TOKEN"]
-    
+ 
 df = load_scholar_logs()
 user_df = get_user_logs("gabe", df)
 summary_df = get_summary(df)
