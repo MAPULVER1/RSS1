@@ -3,6 +3,8 @@ import pandas as pd
 from datetime import datetime
 import os
 from urllib.parse import urlparse
+from safe_git_auto_push import safe_git_auto_push
+
 
 # RSS Feeds - Same as in archive script
 rss_feeds = {
@@ -81,6 +83,7 @@ def refresh_rss():
         df_all = new_df
 
     df_all.to_csv(archive_file, index=False)
+    safe_git_auto_push()
     return len(new_df)
 
 # Run the refresh (useful if called manually)
