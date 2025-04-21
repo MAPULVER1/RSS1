@@ -101,6 +101,8 @@ else:
         if st.button("📂 Save to Archive"):
             df_archive = pd.concat([df_archive, st.session_state["live_rss"]], ignore_index=True)
             df_archive.to_csv(archive_file, index=False)
+            safe_git_auto_push()
+
             st.success("Feed saved to archive!")
 
     # Show today's archive sample
