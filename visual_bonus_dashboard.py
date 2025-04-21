@@ -23,7 +23,7 @@ def visual_bonus_dashboard():
 
     combined = pd.merge(regular, bonus_totals, on="user", how="outer").fillna(0).infer_objects(copy=False)
     combined = combined.infer_objects(copy=False)
-    combined["Total Points"] = combined["Regular Points"] + combined["Bonus Points"]
+    combined["Total Points"] = pd.to_numeric(combined["Regular Points"], errors="coerce").fillna(0) + pd.to_numeric(combined["Bonus Points"], errors="coerce").fillna(0)
     combined = combined.sort_values("Total Points", ascending=False)
 
     fig = px.bar(
