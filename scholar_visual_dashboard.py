@@ -12,44 +12,16 @@ def scholar_visual_dashboard():
 
         # Filter by subject if available
         if "subject" in df.columns:
-            selected_subjects = st.multiselect("🗂️ Filter by Subject", SUBJECT_OPTIONS)
-            if selected_subjects:
-                df = df[df["subject"].isin(selected_subjects)]
-
-        # Total points by scholar
-        points_by_user = df.groupby("user")["points_awarded"].sum().reset_index()
-        points_chart = px.bar(
-            points_by_user,
-            x="user",
-            y="points_awarded",
-            title="🏅 Total Points by Scholar",
-            labels={"points_awarded": "Points"},
-            color="user"
-        )
-        st.plotly_chart(points_chart, use_container_width=True)
-
-        # Logs over time
-        logs_over_time = df.groupby(df["timestamp"].dt.date).size().reset_index(name="Log Count")
-        logs_chart = px.line(
-            logs_over_time,
-            x="timestamp",
-            y="Log Count",
-            title="🕒 Logs Submitted Over Time",
-            markers=True
-        )
-        st.plotly_chart(logs_chart, use_container_width=True)
-
-        # Top logged subjects
-        if "subject" in df.columns:
-            top_subjects = df["subject"].value_counts().reset_index()
-            top_subjects.columns = ["Subject", "Mentions"]
-            subject_chart = px.pie(
-                top_subjects,
-                names="Subject",
-                values="Mentions",
-                title="🧭 Top Logged Subjects"
-            )
-            st.plotly_chart(subject_chart, use_container_width=True)
+    top_subjects = df["subject"].value_counts().reset_index()
+    top_subjects.columns = ["Subject", "Mentions"]
+    subject_chart = px.pie(
+        top_subjects,
+        names="Subject",
+        title="🧭 Top Logged Subjects"
+    )
+    st.plotly_chart(subject_chart, use_container_width=True)
+else:
+    st.info("📊 Subject chart skipped — no 'subject' data found in log.")
 
     except Exception as e:
         st.warning(f"Unable to load log data: {e}")
