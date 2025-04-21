@@ -5,6 +5,10 @@ import os
 from urllib.parse import urlparse
 from dateutil import parser as dateparser
 from safe_git_auto_push import safe_git_auto_push
+from git_utils import safe_git_commit
+
+safe_git_commit("🔄 Auto log update from RSS")
+
 
 # Skip known paywalled or unreliable domains
 excluded_domains = [
