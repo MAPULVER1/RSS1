@@ -31,7 +31,12 @@ def visual_bonus_dashboard():
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.warning('⚠️ Cannot generate chart: missing or invalid data.')
-    st.plotly_chart(fig, use_container_width=True)
+        combined,
+        x="user",
+        y=["Regular Points", "Bonus Points"],
+        title="📊 Total Points by Scholar",
+        labels={"value": "Points", "user": "Scholar", "variable": "Type"},
+        barmode="stack"
 
     if not logs.empty and "timestamp" in logs.columns:
         timeline = logs.groupby(logs["timestamp"].dt.floor("D")).size().reset_index(name="Submissions")
