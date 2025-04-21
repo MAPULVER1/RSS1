@@ -26,14 +26,11 @@ def visual_bonus_dashboard():
     combined["Total Points"] = pd.to_numeric(combined["Regular Points"], errors="coerce").fillna(0) + pd.to_numeric(combined["Bonus Points"], errors="coerce").fillna(0)
     combined = combined.sort_values("Total Points", ascending=False)
 
-    fig = px.bar(
-        combined,
-        x="user",
-        y=["Regular Points", "Bonus Points"],
-        title="📊 Total Points by Scholar",
-        labels={"value": "Points", "user": "Scholar", "variable": "Type"},
-        barmode="stack"
-    )
+    if not combined.empty and 'User' in combined.columns and 'Total Points' in combined.columns:
+        fig = px.bar(combined, x='User', y='Total Points', title='Total Points by User')
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.warning('⚠️ Cannot generate chart: missing or invalid data.')
     st.plotly_chart(fig, use_container_width=True)
 
     if not logs.empty and "timestamp" in logs.columns:
