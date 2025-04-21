@@ -12,13 +12,13 @@ def scholar_visual_dashboard():
 
         # Filter by subject if available
         if "subject" in df.columns:
-            top_subjects = df["subject"].value_counts().reset_index()
-            top_subjects.columns = ["Subject", "Mentions"]
-                subject_chart = px.pie(
-                    top_subjects,
-                    names="Subject",
-                    title="🧭 Top Logged Subjects"
-                )
+    top_subjects = df["subject"].value_counts().reset_index()
+    top_subjects.columns = ["Subject", "Mentions"]
+    subject_chart = px.pie(
+        top_subjects,
+        names="Subject",
+        title="🧭 Top Logged Subjects"
+    )
     st.plotly_chart(subject_chart, use_container_width=True)
 else:
     st.info("📊 Subject chart skipped — no 'subject' data found in log.")
