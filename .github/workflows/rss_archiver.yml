@@ -1,6 +1,15 @@
 name: 🔁 Hourly RSS Archive Update
 
+# This workflow refreshes the RSS feed archive every hour and commits the changes to the GitHub repository.
+# It uses Python with feedparser and pandas libraries to fetch and process the RSS feeds.
+
 on:
+  push:
+    branches:
+      - main  # Trigger on pushes to the main branch
+  pull_request:
+    branches:
+      - main  # Trigger on pull requests to the main branch
   schedule:
     - cron: '0 * * * *'  # Every hour
   workflow_dispatch:      # Allows manual run from GitHub Actions tab
@@ -31,7 +40,7 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add rss_archive.csv
-          git commit -m "🔁 Hourly archive update" || echo "No changes"
+          git commit -m "🔁 Hourly archive update" || echo "No changes to commit"
           git push
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
