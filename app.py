@@ -111,10 +111,21 @@ else:
     # Sidebar RSS Fetcher
     with st.sidebar:
         st.header("🔄 Live RSS Fetch")
-        feed_url = st.text_input("RSS Feed URL", value="https://feeds.feedburner.com/TechCrunch/")
+        st.markdown("Provide an RSS feed URL to fetch live updates.")
+        
+        feed_url = st.text_input(
+            "RSS Feed URL", 
+            value="https://feeds.feedburner.com/TechCrunch/", 
+            help="Enter the URL of the RSS feed you want to fetch."
+        )
+        
         if st.button("📅 Fetch Feed"):
-            df_live = fetch_live_rss(feed_url)
-            st.session_state["live_rss"] = df_live
+            if feed_url.strip():
+                df_live = fetch_live_rss(feed_url)
+                st.session_state["live_rss"] = df_live
+                st.success(f"Successfully fetched feed from: {feed_url}")
+            else:
+                st.error("Please provide a valid RSS feed URL.")
 
     # Show live RSS results
     if "live_rss" in st.session_state:

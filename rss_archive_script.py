@@ -8,6 +8,8 @@ from safe_git_auto_push import safe_git_auto_push
 from git_utils import safe_git_commit
 
 safe_git_commit("🔄 Auto log update from RSS")
+# This script fetches RSS feeds from various news sources, extracts article titles, and stores them in a CSV file.
+# It also tags the articles with subjects and freshness ratings.
 
 
 # Skip known paywalled or unreliable domains
@@ -39,21 +41,21 @@ rss_feeds = {
 
 subject_keywords = {
     "The Executive Branch": [
-        "president", "white house", "executive order", "oval office", "federal agency", 
-        "cabinet", "administration", "press secretary", "executive branch"
+        "administration", "cabinet", "executive branch", "executive order", "federal agency", 
+        "oval office", "president", "press secretary", "white house"
     ],
     "The Legislative Branch": [
-        "congress", "senate", "house of representatives", "bipartisan", 
-        "committee", "legislation", "bill", "lawmakers", "legislative session"
+        "bill", "bipartisan", "committee", "congress", "house of representatives", 
+        "lawmakers", "legislation", "legislative session", "senate"
     ],
     "The Judicial Branch": [
-        "supreme court", "justice", "ruling", "appeals court", "lawsuit", 
-        "jurisdiction", "legal review", "judicial", "precedent", "verdict", 
-        "prosecution", "litigation", "indictment"
+        "appeals court", "indictment", "judicial", "jurisdiction", "justice", 
+        "lawsuit", "legal review", "litigation", "precedent", "prosecution", 
+        "ruling", "supreme court", "verdict"
     ],
     "Education": [
-        "education", "school", "university", "college", "students", "curriculum", 
-        "teaching", "teacher", "learning", "exam", "standardized test", "academic"
+        "academic", "college", "curriculum", "education", "exam", "learning", 
+        "school", "standardized test", "students", "teacher", "teaching", "university"
     ],
     "Technology": [
         "technology", "tech", "AI", "artificial intelligence", "robotics", 
@@ -90,9 +92,16 @@ subject_keywords = {
 
 def tag_subject(title):
     title = title.lower()
+    subject_scores = {}
+
     for subject, keywords in subject_keywords.items():
-        if any(keyword in title for keyword in keywords):
-            return subject
+        matches = sum(1 for keyword in keywords if keyword in title)
+        if matches > 0:
+            subject_scores[subject] = matches / len(keywords)
+
+    if subject_scores:
+        # Return the subject with the highest score
+        return max(subject_scores, key=subject_scores.get)
     return "General"
 
 
@@ -115,8 +124,10 @@ def tag_freshness(pub_date_str):
 today = datetime.today().strftime("%Y-%m-%d")
 rows = []
 
-for entry in feed.entries[:10]:
-    title = entry.title.strip()
+for source, feed_url in rss_feeds.items():
+    feed = feedparser.parse(feed_url)
+    for entry in feed.entries[:10]:
+        title = entry.title.strip()
 
     # Skip clickbait or media-junk headlines
     if any(prefix in title.upper() for prefix in ["LIVE:", "WATCH:", "WWE", "VIDEO:", "PHOTOS:", "GALLERY:"]):
@@ -140,17 +151,30 @@ for entry in feed.entries[:10]:
         "Story Type": freshness
     })
 
+# Convert the collected rows into a DataFrame
 df_today = pd.DataFrame(rows)
 
+# Define the archive file name
 archive_file = "rss_archive.csv"
+
+# Check if the archive file exists
 if os.path.exists(archive_file):
+    # Load the existing archive
     df_archive = pd.read_csv(archive_file)
+    
+    # Combine today's data with the archive, removing duplicates
     df_all = pd.concat([df_archive, df_today]).drop_duplicates(subset=["Date", "Title", "Link"])
 else:
+    # If no archive exists, use today's data as the starting point
     df_all = df_today
 
+# Save the updated archive back to the file
 df_all.to_csv(archive_file, index=False)
-safe_git_auto_push()
 
-print(f"✅ Archived {len(df_today)} new headlines on {today}.")
+# Push changes to the repository if there are updates
+if not df_today.empty:
+    safe_git_auto_push()
+    print(f"✅ Archived {len(df_today)} new headlines on {today}.")
+else:
+    print("ℹ️ No new headlines to archive today.")
 
