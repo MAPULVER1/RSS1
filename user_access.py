@@ -77,6 +77,11 @@ def admin_dashboard():
                 with st.form(f"admin_review_form_{i}"):
                     st.markdown(f"**Link:** [{row['link']}]({row['link']})")
                     st.markdown(f"**Notes:** {row['notes']}")
+                    admin_status = st.selectbox(
+                        "Set Status", ["pending", "approved", "rejected"],
+                        index=["pending", "approved", "rejected"].index(row.get("status", "pending")),
+                        key=f"status_{i}"
+                    )
                     new_points = st.number_input(
                         "Points", min_value=0, max_value=5,
                         value=int(row.get("points_awarded", 0)),
@@ -97,6 +102,7 @@ def admin_dashboard():
                         df.at[i, "points_awarded"] = new_points
                         df.at[i, "admin_notes"] = admin_reason
                         df.at[i, "subject"] = admin_subject
+                        df.at[i, "status"] = admin_status
                         df.to_csv("scholar_logs.csv", index=False)
                         safe_git_commit("🔄 Log update from user_access.py")
                         st.success("✅ Updated successfully.")
@@ -131,10 +137,13 @@ def scholar_dashboard(username):
                     "points_awarded": auto_score,
                     "admin_notes": "",
                     "subject": subject
+                    "status": "pending",
                 }
                 try:
                     df = pd.read_csv("scholar_logs.csv")
                 except:
+                    if "status" not in entry:
+                        entry["status"] = "pending"
                     df = pd.DataFrame(columns=list(entry.keys()))
                 df = pd.concat([df, pd.DataFrame([entry])], ignore_index=True)
                 df.to_csv("scholar_logs.csv", index=False)
