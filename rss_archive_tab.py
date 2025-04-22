@@ -1,3 +1,4 @@
+from data_loader import load_scholar_logs
 import pandas as pd
 import streamlit as st
 from datetime import datetime

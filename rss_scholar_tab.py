@@ -1,3 +1,5 @@
+from git_utils import safe_git_commit
+from data_loader import load_scholar_logs
 import feedparser
 import pandas as pd
 from datetime import datetime
@@ -84,10 +86,11 @@ def rss_scholar_tab(username):
             }
 
             try:
-                df = pd.read_csv("scholar_logs.csv")
+                df = load_scholar_logs()
             except:
                 df = pd.DataFrame(columns=list(log_entry.keys()))
             df = pd.concat([df, pd.DataFrame([log_entry])], ignore_index=True)
             df.to_csv("scholar_logs.csv", index=False)
+    safe_git_commit("🔄 Auto log update from RSS")
             st.success("✅ RSS log submitted successfully!")
 
