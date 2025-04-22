@@ -20,10 +20,33 @@ def admin_dashboard():
     st.markdown("### 📜 Review Logs")
 
     for i, row in df.iterrows():
+        if st.session_state.username == row["user"]:
+            st.markdown("### 👤 Your Review Logs")
+            with st.expander(f"{row['user']} | {row['title']}"):
+                st.markdown(f"**Link:** [{row['link']}]({row['link']})")
+                st.markdown(f"**Notes:** {row['notes']}")
+                st.markdown(f"**Points Awarded:** {row['points_awarded']}")
+                st.markdown(f"**Admin Notes:** {row['admin_notes']}")
+                st.markdown(f"**Status:** {row['status']}")
+
+    st.divider()
+    st.markdown("### 📋 Admin Review Logs")
+
+    for i, row in df.iterrows():
+        if row["status"] != "pending":
+            continue
         with st.expander(f"{row['user']} | {row['title']}"):
             with st.form(f"admin_review_form_{i}"):
                 st.markdown(f"**Link:** [{row['link']}]({row['link']})")
                 st.markdown(f"**Notes:** {row['notes']}")
+                st.markdown(f"**Points Awarded:** {row['points_awarded']}")
+                st.markdown(f"**Admin Notes:** {row['admin_notes']}")
+                st.markdown(f"**Status:** {row['status']}")
+                st.markdown(f"**Subject:** {row['subject']}")
+
+                # Fields for admin to update
+                st.markdown("### 🛠️ Update Review")
+                st.write("Update the fields below and click 'Save Review' to apply changes.")
                 new_points = st.number_input(
                     "Points", min_value=0, max_value=5,
                     value=int(row.get("points_awarded", 0)),
@@ -60,7 +83,41 @@ def admin_dashboard():
 
     st.divider()
     st.markdown("### 🧠 Peer Questions Feed")
-    peer_question_tab()
+
+    # Load peer questions data
+    peer_questions = peer_question_tab()
+
+    # Display up to 10 peer questions for admin review
+    max_questions = 10
+    questions_to_review = peer_questions.head(max_questions)
+
+    if questions_to_review.empty:
+        st.info("No peer questions available for review.")
+    else:
+        for i, question in questions_to_review.iterrows():
+            with st.expander(f"Question {i + 1}: {question['title']}"):
+                st.markdown(f"**Author:** {question['author']}")
+                st.markdown(f"**Content:** {question['content']}")
+                st.markdown(f"**Date Submitted:** {question['date_submitted']}")
+
+                with st.form(f"peer_question_review_form_{i}"):
+                    st.markdown("### 🛠️ Review Question")
+                    admin_feedback = st.text_area(
+                        "Admin Feedback", value=question.get("admin_feedback", ""),
+                        key=f"feedback_{i}"
+                    )
+                    question_status = st.selectbox(
+                        "Status", ["pending", "approved", "rejected"],
+                        index=["pending", "approved", "rejected"].index(question.get("status", "pending")),
+                        key=f"status_{i}"
+                    )
+                    submitted = st.form_submit_button("💾 Save Review")
+                    if submitted:
+                        peer_questions.at[i, "admin_feedback"] = admin_feedback
+                        peer_questions.at[i, "status"] = question_status
+                        peer_questions.to_csv("peer_questions.csv", index=False)
+                        safe_git_commit("🔄 Admin reviewed peer question")
+                        st.success("✅ Question review saved.")
 
     st.divider()
     st.markdown("### 📈 Bonus Participation Summary")
