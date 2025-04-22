@@ -14,12 +14,64 @@ import streamlit as st
 import os
 from git_utils import safe_git_commit
 
-if "GITHUB_TOKEN" in st.secrets:
+if "GITHUB_TOKEN" not in st.secrets:
+    st.error("GitHub token is missing. Please configure it in Streamlit secrets.")
+else:
     os.environ["GITHUB_TOKEN"] = st.secrets["GITHUB_TOKEN"]
 
 # Load user access info
 with open("users.json") as f:
     USERS = json.load(f)
+
+@st.cache_data
+def get_scholar_logs():
+    return load_scholar_logs()
+
+def load_logs():
+    try:
+        df = load_scholar_logs()
+        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", format="%Y-%m-%d %H:%M")
+        return df
+    except Exception as e:
+        st.warning(f"Unable to load logs: {e}")
+        return pd.DataFrame()
+
+def display_scholar_logs(df):
+    st.markdown("### 📜 All Scholar Logs")
+    for i, row in df.iterrows():
+        with st.expander(f"{row['user']} | {row['title']}"):
+            with st.form(f"admin_review_form_{i}"):
+                st.markdown(f"**Link:** [{row['link']}]({row['link']})")
+                st.markdown(f"**Notes:** {row['notes']}")
+                admin_status = st.selectbox(
+                    "Set Status", ["pending", "approved", "rejected"],
+                    index=["pending", "approved", "rejected"].index(row.get("status", "pending")),
+                    key=f"status_{i}"
+                )
+                new_points = st.number_input(
+                    "Points", min_value=0, max_value=5,
+                    value=int(row.get("points_awarded", 0)),
+                    key=f"points_{i}"
+                )
+                admin_reason = st.text_area(
+                    "Admin Notes", value=row.get("admin_notes", ""),
+                    key=f"notes_{i}"
+                )
+                admin_subject = st.selectbox(
+                    "Update Subject", SUBJECT_OPTIONS,
+                    index=SUBJECT_OPTIONS.index(row.get("subject", "General"))
+                    if row.get("subject") in SUBJECT_OPTIONS else 0,
+                    key=f"subject_{i}"
+                )
+                submitted = st.form_submit_button("💾 Save Review")
+                if submitted:
+                    df.at[i, "points_awarded"] = new_points
+                    df.at[i, "admin_notes"] = admin_reason
+                    df.at[i, "subject"] = admin_subject
+                    df.at[i, "status"] = admin_status
+                    df.to_csv("scholar_logs.csv", index=False)
+                    safe_git_commit("🔄 Log update from user_access.py")
+                    st.success("✅ Updated successfully.")
 
 def login():
     st.subheader("🔐 Login")
@@ -65,48 +117,13 @@ def admin_dashboard():
     visual_bonus_dashboard()
 
     try:
-        df = load_scholar_logs()
-        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", format="%Y-%m-%d %H:%M")
+        df = load_logs()
         # Ensure all required columns exist
         expected_cols = ["user", "title", "link", "notes", "timestamp", "points_awarded", "admin_notes", "subject"]
         for col in expected_cols:
             if col not in df.columns:
                 df[col] = ""
-        st.markdown("### 📜 All Scholar Logs")
-        for i, row in df.iterrows():
-            with st.expander(f"{row['user']} | {row['title']}"):
-                with st.form(f"admin_review_form_{i}"):
-                    st.markdown(f"**Link:** [{row['link']}]({row['link']})")
-                    st.markdown(f"**Notes:** {row['notes']}")
-                    admin_status = st.selectbox(
-                        "Set Status", ["pending", "approved", "rejected"],
-                        index=["pending", "approved", "rejected"].index(row.get("status", "pending")),
-                        key=f"status_{i}"
-                    )
-                    new_points = st.number_input(
-                        "Points", min_value=0, max_value=5,
-                        value=int(row.get("points_awarded", 0)),
-                        key=f"points_{i}"
-                    )
-                    admin_reason = st.text_area(
-                        "Admin Notes", value=row.get("admin_notes", ""),
-                        key=f"notes_{i}"
-                    )
-                    admin_subject = st.selectbox(
-                        "Update Subject", SUBJECT_OPTIONS,
-                        index=SUBJECT_OPTIONS.index(row.get("subject", "General"))
-                        if row.get("subject") in SUBJECT_OPTIONS else 0,
-                        key=f"subject_{i}"
-                    )
-                    submitted = st.form_submit_button("💾 Save Review")
-                    if submitted:
-                        df.at[i, "points_awarded"] = new_points
-                        df.at[i, "admin_notes"] = admin_reason
-                        df.at[i, "subject"] = admin_subject
-                        df.at[i, "status"] = admin_status
-                        df.to_csv("scholar_logs.csv", index=False)
-                        safe_git_commit("🔄 Log update from user_access.py")
-                        st.success("✅ Updated successfully.")
+        display_scholar_logs(df)
     except Exception as e:
         st.warning(f"Unable to load logs: {e}")
 
@@ -141,7 +158,7 @@ def scholar_dashboard(username):
                     "status": "pending",
                 }
                 try:
-                    df = load_scholar_logs()
+                    df = get_scholar_logs()
                 except:
                     if "status" not in entry:
                         entry["status"] = "pending"
@@ -160,8 +177,7 @@ def scholar_dashboard(username):
         rss_archive_tab()
         st.markdown("### 📚 My Archive & Feedback")
         try:
-            df = load_scholar_logs()
-            df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", format="%Y-%m-%d %H:%M")
+            df = load_logs()
             user_df = df[df["user"] == username]
             st.dataframe(user_df[["timestamp", "title", "subject", "points_awarded", "admin_notes"]].sort_values("timestamp", ascending=False))
         except Exception as e:
@@ -169,8 +185,7 @@ def scholar_dashboard(username):
 
     with tab4:
         try:
-            df = load_scholar_logs()
-            df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", format="%Y-%m-%d %H:%M")
+            df = load_logs()
             peer_df = df[df["user"] != username]
             st.markdown("### 👥 View Logs from Peers")
             st.dataframe(peer_df.sort_values("timestamp", ascending=False))
@@ -178,7 +193,7 @@ def scholar_dashboard(username):
             st.info("No peer logs yet.")
 
     with tab5:
-            df = load_scholar_logs()
+            df = get_scholar_logs()
             scholar_visual_dashboard(df)
 
     with tab6:
