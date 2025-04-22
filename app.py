@@ -76,8 +76,13 @@ def fetch_live_rss(feed_url):
 def safe_git_auto_push():
     """
     Automatically stages, commits, and pushes changes to the Git repository.
+    Configures Git username and email for the commit.
     """
     try:
+        # Set Git username and email
+        subprocess.run(["git", "config", "user.name", "MAPULVER1"], check=True)
+        subprocess.run(["git", "config", "user.email", "michaelalexanderpulver@outlook.com"], check=True)
+
         # Stage all changes
         subprocess.run(["git", "add", "."], check=True)
         # Commit changes with a generic message
