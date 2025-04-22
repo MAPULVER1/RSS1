@@ -6,6 +6,7 @@ import feedparser
 from datetime import datetime
 from user_access import login, logout, route_user
 import os
+import subprocess
 
 # Load GitHub token from Streamlit secrets
 if "GITHUB_TOKEN" in st.secrets:
@@ -68,6 +69,23 @@ def fetch_live_rss(feed_url):
             "Subject": "General"
         })
     return pd.DataFrame(entries)
+
+# -----------------------
+# GIT AUTO PUSH FUNCTION
+# -----------------------
+def safe_git_auto_push():
+    """
+    Automatically stages, commits, and pushes changes to the Git repository.
+    """
+    try:
+        # Stage all changes
+        subprocess.run(["git", "add", "."], check=True)
+        # Commit changes with a generic message
+        subprocess.run(["git", "commit", "-m", "Auto-commit: Updated RSS archive"], check=True)
+        # Push changes to the remote repository
+        subprocess.run(["git", "push"], check=True)
+    except subprocess.CalledProcessError as e:
+        st.error(f"Git operation failed: {e}")
 
 # -----------------------
 # ROUTE LOGIC
