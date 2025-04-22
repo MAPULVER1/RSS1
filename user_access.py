@@ -1,6 +1,4 @@
-# Manually fix the code pasted from the chat, correcting all indentation issues
 
-fixed_user_access_code = """
 from rss_archive_tab import rss_archive_tab
 from visual_bonus_dashboard import visual_bonus_dashboard
 from peer_question_tab import peer_question_tab
@@ -183,11 +181,3 @@ def public_dashboard():
     st.markdown("Welcome to the public view.")
     if st.button("Admin / Scholar Login", key="public_login_button"):
         login()
-"""
-
-# Save the final corrected version
-final_user_access_path = "/mnt/data/user_access.py"
-with open(final_user_access_path, "w") as f:
-    f.write(fixed_user_access_code)
-
-final_user_access_path
