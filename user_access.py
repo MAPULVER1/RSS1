@@ -145,18 +145,18 @@ def scholar_dashboard(username):
     st.success("✅ Log submitted!")
         if st.button("Logout", key="scholar_logout"):
     logout()
-        with tab2:
-    rss_scholar_tab(username)
-        with tab3:
-    rss_archive_tab()
-    st.markdown("### 📚 My Archive & Feedback")
-        try:
-    df = pd.read_csv("scholar_logs.csv")
-    df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", format="%Y-%m-%d %H:%M")
-    user_df = df[df["user"] == username]
-    st.dataframe(user_df[["timestamp", "title", "subject", "points_awarded", "admin_notes"]].sort_values("timestamp", ascending=False))
-        except Exception as e:
-            st.warning(f"Unable to load log data: {e}")
+    with tab2:
+        rss_scholar_tab(username)
+    with tab3:
+        rss_archive_tab()
+        st.markdown("### 📚 My Archive & Feedback")
+            try:
+        df = pd.read_csv("scholar_logs.csv")
+        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", format="%Y-%m-%d %H:%M")
+        user_df = df[df["user"] == username]
+        st.dataframe(user_df[["timestamp", "title", "subject", "points_awarded", "admin_notes"]].sort_values("timestamp", ascending=False))
+            except Exception as e:
+                st.warning(f"Unable to load log data: {e}")
 
     with tab4:
         try:
@@ -167,11 +167,11 @@ def scholar_dashboard(username):
     st.dataframe(peer_df.sort_values("timestamp", ascending=False))
     except:
     st.info("No peer logs yet.")
-        with tab5:
+    with tab5:
     scholar_visual_dashboard()
-        with tab6:
+    with tab6:
     peer_question_tab()
-        with tab7:
+    with tab7:
     visual_bonus_dashboard()
             def public_dashboard():
     st.title("🗞️ PulverLogic RSS - Public Dashboard")
