@@ -91,6 +91,6 @@ def rss_scholar_tab(username):
                 df = pd.DataFrame(columns=list(log_entry.keys()))
             df = pd.concat([df, pd.DataFrame([log_entry])], ignore_index=True)
             df.to_csv("scholar_logs.csv", index=False)
-    safe_git_commit("🔄 Auto log update from RSS")
+            safe_git_commit("🔄 Auto log update from RSS")
             st.success("✅ RSS log submitted successfully!")
 
