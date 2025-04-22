@@ -136,7 +136,7 @@ def scholar_dashboard(username):
                     "timestamp": now,
                     "points_awarded": auto_score,
                     "admin_notes": "",
-                    "subject": subject
+                    "subject": subject,
                     "status": "pending",
                 }
                 try:
