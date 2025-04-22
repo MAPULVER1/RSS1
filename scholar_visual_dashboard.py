@@ -3,10 +3,13 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from subject_filter_config import SUBJECT_OPTIONS
-from data_loader import get_summary
+from data_loader import load_scholar_logs, get_summary
 
-def scholar_visual_dashboard(df):
+def scholar_visual_dashboard(df=None):
     st.title("📚 Scholar Log Overview")
+
+    if df is None:
+        df = load_scholar_logs()
 
     st.write("### ✍️ Raw Scholar Log")
     st.dataframe(df)
@@ -43,7 +46,14 @@ def scholar_visual_dashboard(df):
         feedback_df = df[df["admin_notes"].notnull()][["user", "title", "admin_notes"]]
         st.dataframe(feedback_df)
 
-    # Student Summary (at bottom)
+    # Status Breakdown
+    if "status" in df.columns:
+        st.write("### 🗂️ Log Review Status")
+        status_chart = px.pie(df["status"].value_counts().reset_index(),
+                              names="index", values="status", title="Log Review Status Distribution")
+        st.plotly_chart(status_chart, use_container_width=True)
+
+    # Student Summary
     st.write("### 📈 Your Performance Summary")
     try:
         full_df = get_summary()

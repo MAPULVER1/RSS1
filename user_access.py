@@ -1,3 +1,4 @@
+from data_loader import load_scholar_logs
 
 from rss_archive_tab import rss_archive_tab
 from visual_bonus_dashboard import visual_bonus_dashboard
@@ -64,7 +65,7 @@ def admin_dashboard():
     visual_bonus_dashboard()
 
     try:
-        df = pd.read_csv("scholar_logs.csv")
+        df = load_scholar_logs()
         df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", format="%Y-%m-%d %H:%M")
         # Ensure all required columns exist
         expected_cols = ["user", "title", "link", "notes", "timestamp", "points_awarded", "admin_notes", "subject"]
@@ -140,7 +141,7 @@ def scholar_dashboard(username):
                     "status": "pending",
                 }
                 try:
-                    df = pd.read_csv("scholar_logs.csv")
+                    df = load_scholar_logs()
                 except:
                     if "status" not in entry:
                         entry["status"] = "pending"
@@ -159,7 +160,7 @@ def scholar_dashboard(username):
         rss_archive_tab()
         st.markdown("### 📚 My Archive & Feedback")
         try:
-            df = pd.read_csv("scholar_logs.csv")
+            df = load_scholar_logs()
             df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", format="%Y-%m-%d %H:%M")
             user_df = df[df["user"] == username]
             st.dataframe(user_df[["timestamp", "title", "subject", "points_awarded", "admin_notes"]].sort_values("timestamp", ascending=False))
@@ -168,7 +169,7 @@ def scholar_dashboard(username):
 
     with tab4:
         try:
-            df = pd.read_csv("scholar_logs.csv")
+            df = load_scholar_logs()
             df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", format="%Y-%m-%d %H:%M")
             peer_df = df[df["user"] != username]
             st.markdown("### 👥 View Logs from Peers")
@@ -177,7 +178,7 @@ def scholar_dashboard(username):
             st.info("No peer logs yet.")
 
     with tab5:
-            df = pd.read_csv("scholar_logs.csv")
+            df = load_scholar_logs()
             scholar_visual_dashboard(df)
 
     with tab6:
