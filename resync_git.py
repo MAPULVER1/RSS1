@@ -1,6 +1,19 @@
 
 import os
 import subprocess
+import time
+
+def run_git_command(cmd, retries=3, delay=2):
+    """Run a git command with retries."""
+    for attempt in range(retries):
+        try:
+            subprocess.run(cmd, check=True)
+            return True
+        except subprocess.CalledProcessError as e:
+            print(f"⚠️ Attempt {attempt + 1} failed for command: {' '.join(cmd)}. Error: {e}")
+            if attempt < retries - 1:
+                time.sleep(delay)
+    return False
 
 def resync_pending_logs():
     buffer_dir = "pending_logs"
@@ -17,10 +30,14 @@ def resync_pending_logs():
         fpath = os.path.join(buffer_dir, fname)
         print(f"🔄 Attempting resync: {fname}")
         try:
-            subprocess.run(["git", "add", "."], check=True)
-            subprocess.run(["git", "commit", "-m", f"Resync: {fname}"], check=True)
-            subprocess.run(["git", "push"], check=True)
+            if not run_git_command(["git", "add", "."]):
+                raise Exception("Failed to add changes to Git.")
+            if not run_git_command(["git", "commit", "-m", f"Resync: {fname}"]):
+                raise Exception("Failed to commit changes to Git.")
+            if not run_git_command(["git", "push"]):
+                raise Exception("Failed to push changes to remote repository.")
+            
             os.remove(fpath)
             print(f"✅ Resynced and removed: {fname}")
-        except subprocess.CalledProcessError as e:
+        except Exception as e:
             print(f"❌ Failed to resync {fname}: {e}")
