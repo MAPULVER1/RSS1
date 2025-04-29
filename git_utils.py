@@ -19,3 +19,15 @@ def run_git_command(command, description):
         print(f"✅ {description} successful.")
     except subprocess.CalledProcessError as e:
         print(f"⚠️ {description} failed: {e}")
+
+
+def safe_git_commit(message):
+    """Safely commit changes to the Git repository with a message."""
+    try:
+        # Stage all changes
+        subprocess.run(["git", "add", "-A"], check=True)
+        # Commit with the provided message
+        subprocess.run(["git", "commit", "-m", message], check=True)
+        print(f"✅ Commit successful: {message}")
+    except subprocess.CalledProcessError as e:
+        print(f"⚠️ Commit failed: {e}")
