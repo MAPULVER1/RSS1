@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 from visual_bonus_dashboard import visual_bonus_dashboard
@@ -6,7 +5,10 @@ from scholar_visual_dashboard import scholar_visual_dashboard
 from peer_question_tab import peer_question_tab
 from data_loader import load_scholar_logs
 from subject_filter_config import SUBJECT_OPTIONS
-from git_utils import safe_git_commit
+from git_utils import configure_git_user
+
+# Ensure Git user is configured
+configure_git_user()
 
 def admin_dashboard():
     st.title("🧑‍💼 Admin Dashboard")
