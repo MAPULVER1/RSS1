@@ -76,19 +76,24 @@ def admin_bonus_tab():
             df = pd.read_csv("bonus_logs.csv")
         except FileNotFoundError:
             df = pd.DataFrame(columns=new_entry.keys())
-        df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
+        df.loc[len(df)] = new_entry
         df.to_csv("bonus_logs.csv", index=False)
-        safe_git_auto_push()
         st.success(f"✅ Bonus points for {selected_user} recorded!")
 
         auto_git_push()
 
-    st.divider()
+    st.markdown("---")
     st.markdown("### 📜 Bonus Log History")
 
     try:
         df = pd.read_csv("bonus_logs.csv")
         df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
-        st.dataframe(df.sort_values("timestamp", ascending=False), use_container_width=True)
-    except:
+        df = df.set_index("timestamp").sort_index(ascending=False).reset_index()
+        st.dataframe(df, use_container_width=True)
+        st.warning("Some timestamps were invalid and have been converted to NaT.")
+        st.write("Invalid rows:", df[df["timestamp"].isna()])
+    except FileNotFoundError:
+        st.info("No bonus point logs found yet. (File does not exist)")
+    except pd.errors.EmptyDataError:
+        st.info("No bonus point logs found yet. (File is empty)")
         st.info("No bonus point logs found yet.")
