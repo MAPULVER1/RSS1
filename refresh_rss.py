@@ -2,8 +2,8 @@ import feedparser
 import pandas as pd
 from datetime import datetime
 import os
+import subprocess
 from urllib.parse import urlparse
-from safe_git_auto_push import safe_git_auto_push
 
 
 # RSS Feeds - Same as in archive script
@@ -84,8 +84,14 @@ def refresh_rss():
         df_all = new_df
 
     df_all.to_csv(archive_file, index=False)
-    safe_git_auto_push()
     return len(new_df)
+
+# Ensure Git is configured with a default identity
+try:
+    subprocess.run(["git", "config", "user.name", "GitHub Actions"], check=True)
+    subprocess.run(["git", "config", "user.email", "actions@github.com"], check=True)
+except subprocess.CalledProcessError as e:
+    print("Error configuring Git:", e)
 
 # Run the refresh (useful if called manually)
 if __name__ == "__main__":
