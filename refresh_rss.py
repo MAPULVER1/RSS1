@@ -35,17 +35,19 @@ rss_feeds = {
 excluded_domains = ["economist.com", "ft.com", "nytimes.com"]
 
 # Subject classification
-"The Executive Branch": ["federal agency", "department", "president", "potus", "constitution"],
-"The Legislative Branch": ["legislation", "committee hearing", "lawmaking", "senate"],
-"The Judicial Branch": ["judicial review", "due process", "prima facie", "precedent", "legal review", "briefing", "due diligence"],
-"Education": ["mathematics", "science", "engineering", "pedagogy", "curriculum", "standardized testing"],
-"Technology": ["innovation", "ai", "hardware", "software", "algorithm", "data privacy"],
-"Business & the Economy": ["inflation", "gdp", "monetary policy", "wall street", "main street", "bonds"],
-"World Leaders": ["sanctions", "foreign diplomacy", "geopolitical", "multilateralism", "trade talks"],
-"International Conflicts": ["proxy war", "trade war", "negotiations", "public opinion", "military"],
-"Business & Commerce": ["corporate governance", "supply chain", "speculation", "assets"],
-"The Global Economy": ["trade agreement", "import", "export", "exchange rate", "free trade", "protectionism"],
-"Human Rights": ["civil liberties", "oppression", "censorship", "humanitarian", "food supply", "famine", "genocide"]
+subject_keywords = {
+    "The Executive Branch": ["federal agency", "department", "president", "potus", "constitution"],
+    "The Legislative Branch": ["legislation", "committee hearing", "lawmaking", "senate"],
+    "The Judicial Branch": ["judicial review", "due process", "prima facie", "precedent", "legal review", "briefing", "due diligence"],
+    "Education": ["mathematics", "science", "engineering", "pedagogy", "curriculum", "standardized testing"],
+    "Technology": ["innovation", "ai", "hardware", "software", "algorithm", "data privacy"],
+    "Business & the Economy": ["inflation", "gdp", "monetary policy", "wall street", "main street", "bonds"],
+    "World Leaders": ["sanctions", "foreign diplomacy", "geopolitical", "multilateralism", "trade talks"],
+    "International Conflicts": ["proxy war", "trade war", "negotiations", "public opinion", "military"],
+    "Business & Commerce": ["corporate governance", "supply chain", "speculation", "assets"],
+    "The Global Economy": ["trade agreement", "import", "export", "exchange rate", "free trade", "protectionism"],
+    "Human Rights": ["civil liberties", "oppression", "censorship", "humanitarian", "food supply", "famine", "genocide"]
+}
 
 def tag_subject(title):
     title = title.lower()
