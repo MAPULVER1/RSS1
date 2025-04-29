@@ -13,6 +13,9 @@ from subject_filter_config import SUBJECT_OPTIONS
 import streamlit as st
 import os
 from git_utils import safe_git_commit
+from threading import Thread
+from queue import Queue
+import time
 
 if "GITHUB_TOKEN" not in st.secrets:
     st.error("GitHub token is missing. Please configure it in Streamlit secrets.")
@@ -24,8 +27,11 @@ with open("users.json") as f:
     USERS = json.load(f)
 
 @st.cache_data
-def get_scholar_logs():
+def get_scholar_logs(data_version: str):
     return load_scholar_logs()
+
+# Add a mechanism to invalidate the cache
+data_version = os.getenv("DATA_VERSION", "1.0")  # Update this version when the data source changes
 
 def load_logs():
     try:
@@ -70,7 +76,7 @@ def display_scholar_logs(df):
                     df.at[i, "subject"] = admin_subject
                     df.at[i, "status"] = admin_status
                     df.to_csv("scholar_logs.csv", index=False)
-                    safe_git_commit("🔄 Log update from user_access.py")
+                    log_update_queue.put("🔄 Log update from user_access.py")
                     st.success("✅ Updated successfully.")
 
 def login():
@@ -95,6 +101,24 @@ def logout():
     st.session_state.role = "public"
     st.session_state.impersonating = None
     st.rerun()
+
+# Initialize a queue for log updates
+log_update_queue = Queue()
+
+def process_log_updates():
+    while True:
+        try:
+            # Batch process log updates every 5 seconds
+            time.sleep(5)
+            if not log_update_queue.empty():
+                while not log_update_queue.empty():
+                    log_update_queue.get()
+                safe_git_commit("🔄 Batched log updates from user_access.py")
+        except Exception as e:
+            print(f"Error processing log updates: {e}")
+
+# Start the log update processing thread
+Thread(target=process_log_updates, daemon=True).start()
 
 def route_user():
     role = st.session_state.role
@@ -131,9 +155,9 @@ def scholar_dashboard(username):
     st.title("🎓 Scholar Portal")
     st.success(f"✅ Logged in as: {username} (Scholar)")
 
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
         "📝 Submit Log", "📡 RSS Log", "📰 Today's Headlines", "👥 Peer Logs",
-        "📚 My Archive", "📊 Visualize", "💡 Peer Questions", "📈 Points Dashboard"
+        "📚 My Archive", "📊 Visualize", "💡 Peer Questions"
     ])
 
     with tab1:
@@ -145,7 +169,7 @@ def scholar_dashboard(username):
             submitted = st.form_submit_button("Submit")
             if submitted:
                 now = datetime.now().strftime("%Y-%m-%d %H:%M")
-                auto_score = 1 + (2 if len(notes) >= 100 else 0)
+                auto_score = 1 + (2 if notes and isinstance(notes, str) and len(notes) >= 100 else 0)
                 entry = {
                     "user": username,
                     "title": article,
@@ -158,8 +182,8 @@ def scholar_dashboard(username):
                     "status": "pending",
                 }
                 try:
-                    df = get_scholar_logs()
-                except:
+                    df = get_scholar_logs(data_version)
+                except KeyError:
                     if "status" not in entry:
                         entry["status"] = "pending"
                     df = pd.DataFrame(columns=list(entry.keys()))
@@ -188,12 +212,12 @@ def scholar_dashboard(username):
             df = load_logs()
             peer_df = df[df["user"] != username]
             st.markdown("### 👥 View Logs from Peers")
-            st.dataframe(peer_df.sort_values("timestamp", ascending=False))
-        except:
+            st.dataframe(peer_df[["timestamp", "title", "subject", "points_awarded", "admin_notes"]].sort_values("timestamp", ascending=False))
+        except KeyError:
             st.info("No peer logs yet.")
 
     with tab5:
-            df = get_scholar_logs()
+            df = get_scholar_logs(data_version)
             scholar_visual_dashboard(df)
 
     with tab6:
@@ -203,6 +227,10 @@ def scholar_dashboard(username):
         visual_bonus_dashboard()
 
 def public_dashboard():
+    """
+    Displays the public dashboard for PulverLogic RSS, providing a welcome message
+    if st.button("Login", key="public_login_button"):
+    """
     st.title("🗞️ PulverLogic RSS - Public Dashboard")
     st.markdown("Welcome to the public view.")
     if st.button("Admin / Scholar Login", key="public_login_button"):
