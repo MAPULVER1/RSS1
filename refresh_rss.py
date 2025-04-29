@@ -15,7 +15,7 @@ rss_feeds = {
     "The Guardian": "https://www.theguardian.com/world/rss",
     "Al Jazeera": "https://www.aljazeera.com/xml/rss/all.xml",
     "Fox News": "http://feeds.foxnews.com/foxnews/latest",
-    "Bloomberg": "https://www.bloomberg.com/feed/podcast/etf-report.xml",
+    "Bloomberg": "https://www.bloomberg.com/feeds/bbiz.xml",
     "The Washington Post": "http://feeds.washingtonpost.com/rss/national",
     "ABC News": "https://abcnews.go.com/abcnews/topstories",
     "CBS News": "https://www.cbsnews.com/latest/rss/main",
@@ -31,22 +31,21 @@ rss_feeds = {
 }
 
 # Excluded (paywalled or gated) domains
+# Domains to exclude from RSS processing due to paywalls or restrictions
 excluded_domains = ["economist.com", "ft.com", "nytimes.com"]
 
 # Subject classification
-subject_keywords = {
-    "The Executive Branch": ["federal agency", "department", "president", "POTUS", "constitution"],
-    "The Legislative Branch": ["legislation", "committee hearing", "lawmaking", "senate"],
-    "The Judicial Branch": ["judicial review", "due process", "prima facie", "precedent", "legal review", "briefing", "due diligence"],
-    "Education": ["mathematics", "science", "engineering", "pedagogy", "curriculum", "standardized testing"],
-    "Technology": ["innovation", "AI", "hardware", "software", "algorithm", "data privacy"],
-    "Business & the Economy": ["inflation", "GDP", "monetary policy", "wall street", "main street", "bonds"],
-    "World Leaders": ["sanctions", "foreign diplomacy", "geopolitical", "multilateralism", "trade talks"],
-    "International Conflicts": ["proxy war", "trade war", "negotiations", "public opinion", "military"],
-    "Business & Commerce": ["corporate governance", "supply chain", "speculation", "assets"],
-    "The Global Economy": ["trade agreement", "import", "export", "exchange rate", "free trade", "protectionism"],
-    "Human Rights": ["civil liberties", "oppression", "censorship", "humanitarian", "food supply", "famine", "genocide"]
-}
+"The Executive Branch": ["federal agency", "department", "president", "potus", "constitution"],
+"The Legislative Branch": ["legislation", "committee hearing", "lawmaking", "senate"],
+"The Judicial Branch": ["judicial review", "due process", "prima facie", "precedent", "legal review", "briefing", "due diligence"],
+"Education": ["mathematics", "science", "engineering", "pedagogy", "curriculum", "standardized testing"],
+"Technology": ["innovation", "ai", "hardware", "software", "algorithm", "data privacy"],
+"Business & the Economy": ["inflation", "gdp", "monetary policy", "wall street", "main street", "bonds"],
+"World Leaders": ["sanctions", "foreign diplomacy", "geopolitical", "multilateralism", "trade talks"],
+"International Conflicts": ["proxy war", "trade war", "negotiations", "public opinion", "military"],
+"Business & Commerce": ["corporate governance", "supply chain", "speculation", "assets"],
+"The Global Economy": ["trade agreement", "import", "export", "exchange rate", "free trade", "protectionism"],
+"Human Rights": ["civil liberties", "oppression", "censorship", "humanitarian", "food supply", "famine", "genocide"]
 
 def tag_subject(title):
     title = title.lower()
