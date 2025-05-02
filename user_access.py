@@ -130,26 +130,37 @@ def route_user():
         public_dashboard()
 
 def admin_dashboard():
-    st.markdown("### 🎯 Bonus Points Review + Entry")
-    admin_bonus_tab()
-    st.title("🧑‍💼 Admin Dashboard")
-    st.success(f"✅ Logged in as: {st.session_state.username} (Admin)")
-    if st.button("Logout", key="admin_logout"):
+    st.sidebar.title("🧑‍💼 Admin Dashboard")
+    st.sidebar.success(f"✅ Logged in as: {st.session_state.username} (Admin)")
+    if st.sidebar.button("Logout", key="admin_logout"):
         logout()
 
-    st.markdown("### 📈 Scholar Participation Summary")
-    visual_bonus_dashboard()
+    tab = st.sidebar.radio("Navigation", [
+        "🎯 Bonus Points Review + Entry",
+        "📈 Scholar Participation Summary",
+        "📜 All Scholar Logs"
+    ])
 
-    try:
-        df = load_logs()
-        # Ensure all required columns exist
-        expected_cols = ["user", "title", "link", "notes", "timestamp", "points_awarded", "admin_notes", "subject"]
-        for col in expected_cols:
-            if col not in df.columns:
-                df[col] = ""
-        display_scholar_logs(df)
-    except Exception as e:
-        st.warning(f"Unable to load logs: {e}")
+    if tab == "🎯 Bonus Points Review + Entry":
+        st.markdown("### 🎯 Bonus Points Review + Entry")
+        admin_bonus_tab()
+
+    elif tab == "📈 Scholar Participation Summary":
+        st.markdown("### 📈 Scholar Participation Summary")
+        visual_bonus_dashboard()
+
+    elif tab == "📜 All Scholar Logs":
+        st.markdown("### 📜 All Scholar Logs")
+        try:
+            df = load_logs()
+            # Ensure all required columns exist
+            expected_cols = ["user", "title", "link", "notes", "timestamp", "points_awarded", "admin_notes", "subject"]
+            for col in expected_cols:
+                if col not in df.columns:
+                    df[col] = ""
+            display_scholar_logs(df)
+        except Exception as e:
+            st.warning(f"Unable to load logs: {e}")
 
 def scholar_dashboard(username):
     st.title("🎓 Scholar Portal")
@@ -217,21 +228,49 @@ def scholar_dashboard(username):
             st.info("No peer logs yet.")
 
     with tab5:
-            df = get_scholar_logs(data_version)
-            scholar_visual_dashboard(df)
+        df = get_scholar_logs(data_version)
+        scholar_visual_dashboard(df)
 
     with tab6:
         peer_question_tab()
 
     with tab7:
-        visual_bonus_dashboard()
-
-def public_dashboard():
-    """
-    Displays the public dashboard for PulverLogic RSS, providing a welcome message
-    if st.button("Login", key="public_login_button"):
-    """
-    st.title("🗞️ PulverLogic RSS - Public Dashboard")
-    st.markdown("Welcome to the public view.")
-    if st.button("Admin / Scholar Login", key="public_login_button"):
-        login()
+        st.markdown("### 💡 Scholar Submitted Questions")
+        with st.form("submit_question_form"):
+            question = st.text_area("Submit a Question", key="scholar_question", max_chars=500)
+            question_subject = st.selectbox("Select Subject", SUBJECT_OPTIONS, key="question_subject")
+            min_questions = st.checkbox("Minimum 10 Questions Submitted", key="min_questions")
+            max_questions = st.checkbox("Maximum 10 Questions Submitted", key="max_questions")
+            submitted = st.form_submit_button("Submit Question")
+            if submitted:
+                now = datetime.now().strftime("%Y-%m-%d %H:%M")
+                question_entry = {
+                    "user": username,
+                    "question": question,
+                    "subject": question_subject,
+                    "timestamp": now,
+                    "status": "pending",
+                    "min_questions": min_questions,
+                    "max_questions": max_questions,
+                }
+                try:
+                    df = pd.read_csv("scholar_questions.csv")
+                except FileNotFoundError:
+                    df = pd.DataFrame(columns=["user", "question", "subject", "timestamp", "status", "min_questions", "max_questions"])
+                user_questions_count = len(df[df["user"] == username])
+                if user_questions_count >= 10:
+                    st.error("❌ You can only submit up to 10 questions.")
+                elif not min_questions or not max_questions:
+                    st.error("❌ Both minimum and maximum question submission checkboxes must be checked.")
+                else:
+                    df = pd.concat([df, pd.DataFrame([question_entry])], ignore_index=True)
+                    df.to_csv("scholar_questions.csv", index=False)
+                    safe_git_commit("🔄 Question update from user_access.py")
+                    st.success("✅ Question submitted!")
+        try:
+            df = pd.read_csv("scholar_questions.csv")
+            user_questions = df[df["user"] == username]
+            st.markdown("### 📋 My Submitted Questions")
+            st.dataframe(user_questions[["timestamp", "question", "subject", "status", "min_questions", "max_questions"]].sort_values("timestamp", ascending=False))
+        except FileNotFoundError:
+            st.info("No questions submitted yet.")

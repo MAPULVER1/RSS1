@@ -133,17 +133,28 @@ else:
         st.dataframe(st.session_state["live_rss"])
 
         if st.button("📂 Save to Archive"):
-            df_archive = pd.concat([df_archive, st.session_state["live_rss"]], ignore_index=True)
+            # Ensure no duplicate entries are added to the archive
+            df_archive = pd.concat([df_archive, st.session_state["live_rss"]]).drop_duplicates(subset=["Link"], keep="last").reset_index(drop=True)
             df_archive.to_csv(archive_file, index=False)
             safe_git_auto_push()
 
-            st.success("Feed saved to archive!")
+            st.success("Feed saved to archive and changes pushed to Git!")
 
-    # Show today's archive sample
+    # Show and auto-sort today's archive headlines
     if not df_archive.empty:
+        # Filter today's headlines
         df_today = df_archive[df_archive["Date"].dt.strftime("%Y-%m-%d") == today_str]
-        st.subheader("📍 Today’s Headlines (Public Sample)")
-        st.dataframe(df_today[["Date", "Title", "Source", "Subject"]].head(10))
+        
+        # Sort headlines by Source and Title
+        df_today = df_today.sort_values(by=["Source", "Title"], ascending=True)
+        
+        st.subheader("📍 Today’s Headlines (Public View)")
+        st.dataframe(df_today[["Date", "Title", "Source", "Subject"]])
+
+        # Feed sorted headlines back into the archive
+        df_archive = pd.concat([df_archive, df_today]).drop_duplicates(subset=["Link"], keep="last").reset_index(drop=True)
+        df_archive.to_csv(archive_file, index=False)
+        safe_git_auto_push()
     else:
         st.info("No public archive found.")
 

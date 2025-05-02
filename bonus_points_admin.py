@@ -32,12 +32,42 @@ BONUS_TYPES = {
 
 def auto_git_push():
     try:
-        username = st.secrets["github_username"]
+        username = st.secrets.get("github_username", None)
+        token = st.secrets.get("github_token")
+        if not token:
+            st.warning("GitHub token is missing in secrets. Please configure it to enable auto-push.")
         token = st.secrets["github_token"]
-        repo = st.secrets["github_repo"]
+        repo = st.secrets.get("github_repo", None)
+        if not repo:
+            st.warning("GitHub repository name is missing in secrets.")
+            return
         remote_url = f"https://{username}:{token}@github.com/{username}/{repo}.git"
+        token = st.secrets["github_token"]
+        result = subprocess.run(["git", "remote", "set-url", "origin", remote_url], capture_output=True, text=True)
+        if result.returncode != 0:
+            st.warning(f"Failed to set remote URL: {result.stderr}")
+            return
 
-        subprocess.run(["git", "remote", "set-url", "origin", remote_url], check=True)
+        result = subprocess.run(["git", "add", "."], capture_output=True, text=True)
+        if result.returncode != 0:
+            st.warning(f"Failed to add files: {result.stderr}")
+            return
+    except KeyError as e:
+        st.warning(f"Missing key in secrets: {e}")
+    except subprocess.CalledProcessError as e:
+        st.warning(f"Git command failed: {e}")
+    except FileNotFoundError as e:
+        st.warning(f"File not found: {e}")
+    except Exception as e:
+        st.warning(f"An unexpected error occurred: {e}")
+        if result.returncode != 0:
+            st.warning(f"Failed to commit changes: {result.stderr}")
+            return
+
+        result = subprocess.run(["git", "push", "origin", "main"], capture_output=True, text=True)
+        if result.returncode != 0:
+            st.warning(f"Failed to push changes: {result.stderr}")
+            return
         subprocess.run(["git", "add", "."], check=True)
         subprocess.run(["git", "commit", "-m", "🔄 Auto log update from Streamlit app"], check=True)
         subprocess.run(["git", "push", "origin", "main"], check=True)

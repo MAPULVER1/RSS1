@@ -5,7 +5,7 @@ from scholar_visual_dashboard import scholar_visual_dashboard
 from peer_question_tab import peer_question_tab
 from data_loader import load_scholar_logs
 from subject_filter_config import SUBJECT_OPTIONS
-from git_utils import configure_git_user
+from git_utils import configure_git_user, safe_git_commit
 
 # Ensure Git user is configured
 configure_git_user()
