@@ -15,8 +15,12 @@ def get_spacy_model():
     try:
         return spacy.load("en_core_web_sm")
     except OSError:
-        subprocess.run(["python3", "-m", "spacy", "download", "en_core_web_sm"], check=True)
-        return spacy.load("en_core_web_sm")
+        try:
+            subprocess.run(["python3", "-m", "spacy", "download", "en_core_web_sm"], check=True)
+            return spacy.load("en_core_web_sm")
+        except Exception as e:
+            st.error("spaCy model 'en_core_web_sm' is not installed and could not be downloaded automatically. Please run './setup.sh' or 'python3 -m spacy download en_core_web_sm' in your environment.")
+            st.stop()
 
 nlp = get_spacy_model()
 
