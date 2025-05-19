@@ -1,4 +1,5 @@
 import spacy # type: ignore
+import spacy.cli  # type: ignore
 import streamlit as st # type: ignore
 st.set_page_config(page_title="Extemp Topic Generator", layout="wide")
 
@@ -16,13 +17,15 @@ def get_spacy_model():
         return spacy.load("en_core_web_sm")
     except OSError:
         try:
-            import spacy.cli  # type: ignore
             spacy.cli.download("en_core_web_sm")
             return spacy.load("en_core_web_sm")
         except Exception as e:
-            st.error("spaCy model 'en_core_web_sm' is not installed and could not be downloaded automatically. Please run './setup.sh' or 'python3 -m spacy download en_core_web_sm' in your environment.")
+            st.error(
+                "spaCy model 'en_core_web_sm' is not installed and could not be downloaded automatically. "
+                "Please run './setup.sh' or 'python3 -m spacy download en_core_web_sm' in your environment."
+            )
             st.stop()
-            raise RuntimeError("spaCy model 'en_core_web_sm' is not available.")
+            return None
 
 nlp = get_spacy_model()
 if nlp is None:
