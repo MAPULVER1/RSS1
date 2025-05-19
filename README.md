@@ -195,5 +195,18 @@ Logging is strictly for administrative tracking: only log which topic was chosen
 
 ---
 
+## Setup Instructions
+
+To set up the environment and install all dependencies (including the spaCy English model), run:
+
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+This will install all required Python packages and download the spaCy model needed for topic generation.
+
+---
+
 **This markdown file is the spec for your refactor. Paste it into your repo root or give it directly to Copilot/Visual Studio Code Agent Mode for maximum clarity.**
 
