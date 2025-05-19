@@ -2,6 +2,6 @@ schedule
 streamlit
 pandas
 feedparser
-openai
-matplotlib
-plotly
+spacy
+en_core_web_sm
+newspaper3k

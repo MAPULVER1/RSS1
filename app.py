@@ -1,44 +1,22 @@
 import streamlit as st
-st.set_page_config(page_title="PulverLogic RSS", layout="wide")
+st.set_page_config(page_title="Extemp Topic Generator", layout="wide")
 
 import pandas as pd
 import feedparser
 from datetime import datetime
-from user_access import login, logout, route_user
 import os
 import subprocess
+import random
+import nltk
+from newspaper import Article
 
-# Load GitHub token from Streamlit secrets
-if "GITHUB_TOKEN" in st.secrets:
-    os.environ["GITHUB_TOKEN"] = st.secrets["GITHUB_TOKEN"]
-
-# -----------------------
-# SESSION STATE SETUP
-# -----------------------
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-if "username" not in st.session_state:
-    st.session_state.username = ""
-if "role" not in st.session_state:
-    st.session_state.role = "public"
-if "impersonating" not in st.session_state:
-    st.session_state.impersonating = None
-if "show_login" not in st.session_state:
-    st.session_state.show_login = False
-
-# -----------------------
-# STATUS BAR
-# -----------------------
-def status_bar():
-    if st.session_state.logged_in:
-        user = st.session_state.username
-        role = st.session_state.role
-        icon = "🧑‍💼" if role == "admin" else "🎓" if role == "student" else "🔐"
-        st.info(f"{icon} Logged in as: {user} ({role.title()})")
-    else:
-        st.warning("🔓 Public Mode — You are not logged in")
-
-status_bar()
+# Download NLTK data if not already present
+try:
+    nltk.data.find('tokenizers/punkt')
+    nltk.data.find('taggers/averaged_perceptron_tagger')
+except LookupError:
+    nltk.download('punkt')
+    nltk.download('averaged_perceptron_tagger')
 
 # -----------------------
 # LOAD EXISTING ARCHIVE
@@ -59,7 +37,6 @@ except Exception as e:
 def fetch_live_rss(feed_url):
     feed = feedparser.parse(feed_url)
     entries = []
-
     for entry in feed.entries:
         entries.append({
             "Date": datetime.now().strftime("%Y-%m-%d"),
@@ -74,88 +51,132 @@ def fetch_live_rss(feed_url):
 # GIT AUTO PUSH FUNCTION
 # -----------------------
 def safe_git_auto_push():
-    """
-    Automatically stages, commits, and pushes changes to the Git repository.
-    Configures Git username and email for the commit.
-    """
     try:
-        # Set Git username and email
         subprocess.run(["git", "config", "user.name", "MAPULVER1"], check=True)
         subprocess.run(["git", "config", "user.email", "michaelalexanderpulver@outlook.com"], check=True)
-
-        # Stage all changes
         subprocess.run(["git", "add", "."], check=True)
-        # Commit changes with a generic message
         subprocess.run(["git", "commit", "-m", "Auto-commit: Updated RSS archive"], check=True)
-        # Push changes to the remote repository
         subprocess.run(["git", "push"], check=True)
     except subprocess.CalledProcessError as e:
         st.error(f"Git operation failed: {e}")
 
 # -----------------------
-# ROUTE LOGIC
+# NLTK-BASED QUESTION GENERATOR
 # -----------------------
-if st.session_state.logged_in:
-    route_user()
-else:
-    # Public homepage view
-    st.title("🗾️ PulverLogic RSS - Public Dashboard")
-    st.markdown("Welcome to the public view. Here you can see live headlines and archived visualizations.")
+def to_question(headline):
+    tokens = nltk.word_tokenize(headline)
+    tags = nltk.pos_tag(tokens)
+    subj = None
+    verb = None
+    obj = None
+    for i, (word, tag) in enumerate(tags):
+        if tag.startswith('NN') and not subj:
+            subj = word
+        elif tag.startswith('VB') and not verb:
+            verb = word
+        elif tag.startswith('NN') and subj and not obj:
+            obj = word
+    if subj and verb and obj:
+        if random.choice(["informative", "persuasive"]) == "informative":
+            return f"What has {subj} {verb} {obj}?"
+        else:
+            return f"Should {subj} {verb} {obj}?"
+    return None
 
-    if st.button("🔐 Scholar/Admin Login"):
-        st.session_state.show_login = True
+def generate_topics(headlines):
+    questions = []
+    for h in headlines:
+        q = to_question(h)
+        if q:
+            questions.append(q)
+    return random.sample(questions, min(3, len(questions)))
 
-    if st.session_state.show_login:
-        login()
+# -----------------------
+# ARTICLE RETRIEVAL
+# -----------------------
+def fetch_article_text(url):
+    try:
+        article = Article(url)
+        article.download()
+        article.parse()
+        return article.text
+    except:
+        return "[Content not available]"
 
-    # Sidebar RSS Fetcher
-    with st.sidebar:
-        st.header("🔄 Live RSS Fetch")
-        st.markdown("Provide an RSS feed URL to fetch live updates.")
-        
-        feed_url = st.text_input(
-            "RSS Feed URL", 
-            value="https://feeds.feedburner.com/TechCrunch/", 
-            help="Enter the URL of the RSS feed you want to fetch."
-        )
-        
-        if st.button("📅 Fetch Feed"):
-            if feed_url.strip():
-                df_live = fetch_live_rss(feed_url)
-                st.session_state["live_rss"] = df_live
-                st.success(f"Successfully fetched feed from: {feed_url}")
-            else:
-                st.error("Please provide a valid RSS feed URL.")
+def find_related_articles(topic, df):
+    keywords = [w for w in nltk.word_tokenize(topic) if w.isalpha() and w.lower() not in nltk.corpus.stopwords.words('english')]
+    mask = df["Title"].apply(lambda t: any(k.lower() in t.lower() for k in keywords))
+    articles = df[mask][["Title", "Link"]].drop_duplicates().to_dict(orient="records")
+    for art in articles:
+        art["text"] = fetch_article_text(art["Link"])
+    return articles
 
-    # Show live RSS results
-    if "live_rss" in st.session_state:
-        st.subheader("🔞 Live RSS Feed Preview")
-        st.dataframe(st.session_state["live_rss"])
+# -----------------------
+# LOGGING
+# -----------------------
+def log_selection(topic, articles):
+    log_file = "topic_logs.csv"
+    entry = {
+        "timestamp": datetime.now().isoformat(),
+        "topic": topic,
+        "articles": "; ".join(a["Link"] for a in articles)
+    }
+    if os.path.exists(log_file):
+        df = pd.read_csv(log_file)
+    else:
+        df = pd.DataFrame(columns=["timestamp","topic","articles"])
+    df = pd.concat([df, pd.DataFrame([entry])], ignore_index=True)
+    df.to_csv(log_file, index=False)
+    safe_git_auto_push()
 
-        if st.button("📂 Save to Archive"):
-            # Ensure no duplicate entries are added to the archive
-            df_archive = pd.concat([df_archive, st.session_state["live_rss"]]).drop_duplicates(subset=["Link"], keep="last").reset_index(drop=True)
-            df_archive.to_csv(archive_file, index=False)
-            safe_git_auto_push()
+# -----------------------
+# STREAMLIT UI
+# -----------------------
+st.title("🗞️ Extemp Topic Generator")
 
-            st.success("Feed saved to archive and changes pushed to Git!")
+st.sidebar.header("🔄 Live RSS Fetch")
+feed_url = st.sidebar.text_input(
+    "RSS Feed URL",
+    value="https://feeds.feedburner.com/TechCrunch/",
+    help="Enter the URL of the RSS feed you want to fetch."
+)
+if st.sidebar.button("📅 Fetch Feed"):
+    if feed_url.strip():
+        df_live = fetch_live_rss(feed_url)
+        st.session_state["live_rss"] = df_live
+        st.success(f"Successfully fetched feed from: {feed_url}")
+    else:
+        st.error("Please provide a valid RSS feed URL.")
 
-    # Show and auto-sort today's archive headlines
-    if not df_archive.empty:
-        # Filter today's headlines
-        df_today = df_archive[df_archive["Date"].dt.strftime("%Y-%m-%d") == today_str]
-        
-        # Sort headlines by Source and Title
-        df_today = df_today.sort_values(by=["Source", "Title"], ascending=True)
-        
-        st.subheader("📍 Today’s Headlines (Public View)")
-        st.dataframe(df_today[["Date", "Title", "Source", "Subject"]])
-
-        # Feed sorted headlines back into the archive
-        df_archive = pd.concat([df_archive, df_today]).drop_duplicates(subset=["Link"], keep="last").reset_index(drop=True)
+# Show live RSS results
+if "live_rss" in st.session_state:
+    st.subheader("🔞 Live RSS Feed Preview")
+    st.dataframe(st.session_state["live_rss"])
+    if st.button("📂 Save to Archive"):
+        df_archive = pd.concat([df_archive, st.session_state["live_rss"]]).drop_duplicates(subset=["Link"], keep="last").reset_index(drop=True)
         df_archive.to_csv(archive_file, index=False)
         safe_git_auto_push()
-    else:
-        st.info("No public archive found.")
+        st.success("Feed saved to archive and changes pushed to Git!")
+
+# Show and auto-sort today's archive headlines
+if not df_archive.empty:
+    df_today = df_archive[df_archive["Date"].dt.strftime("%Y-%m-%d") == today_str]
+    df_today = df_today.sort_values(by=["Source", "Title"], ascending=True)
+    st.subheader("📍 Today’s Headlines")
+    st.dataframe(df_today[["Date", "Title", "Source", "Subject"]])
+    # Topic generation UI
+    if st.button("Generate Topics"):
+        st.session_state["topics"] = generate_topics(df_today["Title"].tolist())
+    if st.session_state.get("topics"):
+        choice = st.radio("Choose a topic:", st.session_state["topics"])
+        if choice and st.button("Show Related Articles"):
+            related = find_related_articles(choice, df_archive)
+            for art in related[:10]:
+                with st.expander(art["Title"]):
+                    st.write(art["text"])
+            log_selection(choice, related)
+            st.success("Session logged.")
+else:
+    st.info("No public archive found.")
 
 
