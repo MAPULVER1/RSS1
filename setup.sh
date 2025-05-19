@@ -11,10 +11,9 @@ fi
 chmod +x "$0"
 
 # Install Python dependencies
-pip install -r requirements.txt
+pip install --user -r requirements.txt
 
-# Download the spaCy English model
-echo "Downloading spaCy English model (en_core_web_sm)..."
-python3 -m spacy download en_core_web_sm
+# Download the spaCy English model to user directory for compatibility
+python3 -m spacy download en_core_web_sm --user
 
 echo "Setup complete."

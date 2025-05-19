@@ -16,28 +16,8 @@ def get_spacy_model():
     try:
         return spacy.load("en_core_web_sm")
     except OSError:
-        # Try to download to a writable directory (e.g., ~/.cache or /tmp for Streamlit Cloud)
-        import sys
-        import importlib.util
-        import os
-        import spacy.cli
-        # Try user install
-        try:
-            spacy.cli.download("en_core_web_sm", "--user")
-            return spacy.load("en_core_web_sm")
-        except Exception:
-            # Try to download to /tmp if user install fails (Streamlit Cloud allows /tmp)
-            try:
-                model_dir = "/tmp/en_core_web_sm"
-                spacy.cli.download("en_core_web_sm", model_dir)
-                # Add /tmp to sys.path and try to load
-                sys.path.append("/tmp")
-                if importlib.util.find_spec("en_core_web_sm"):
-                    return spacy.load("en_core_web_sm")
-            except Exception:
-                pass
         st.error(
-            "spaCy model 'en_core_web_sm' is not installed and could not be downloaded automatically. "
+            "spaCy model 'en_core_web_sm' is not installed. "
             "Please run './setup.sh' or 'python3 -m spacy download en_core_web_sm' in your environment before running the app."
         )
         st.stop()
