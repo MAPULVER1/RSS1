@@ -23,7 +23,7 @@ try:
     df_archive["Date"] = pd.to_datetime(df_archive["Date"], errors="coerce")
 except Exception as e:
     st.error(f"⚠️ Failed to load RSS archive: {e}")
-    df_archive = pd.DataFrame(columns=["Date", "Source", "Title", "Link", "Subject"])
+    df_archive = pd.DataFrame(columns=["Date", "Source", "Title", "Link"])  # Removed Subject
 
 # -----------------------
 # RSS PARSER FUNCTION
@@ -31,13 +31,12 @@ except Exception as e:
 def fetch_live_rss(feed_url):
     feed = feedparser.parse(feed_url)
     entries = []
-    for entry in feed.entries:
+    for entry in feed.entries[:10]:  # Limit to 10 new headlines per pull
         entries.append({
             "Date": datetime.now().strftime("%Y-%m-%d"),
             "Source": feed.feed.get("title", "Unknown Source"),
             "Title": entry.get("title", "No title"),
-            "Link": entry.get("link", "No link"),
-            "Subject": "General"
+            "Link": entry.get("link", "No link")
         })
     return pd.DataFrame(entries)
 
@@ -55,31 +54,30 @@ def safe_git_auto_push():
         st.error(f"Git operation failed: {e}")
 
 # -----------------------
-# NLTK-BASED QUESTION GENERATOR
+# ADVANCED QUESTION GENERATOR (spaCy)
 # -----------------------
 def to_question(headline):
     doc = nlp(headline)
     subj = next((tok.text for tok in doc if tok.dep_ == "nsubj"), None)
     verb = next((tok.lemma_ for tok in doc if tok.dep_ == "ROOT"), None)
-    obj = next((tok.text for tok in doc if tok.dep_ == "dobj"), None)
+    obj  = next((tok.text for tok in doc if tok.dep_ == "dobj"), None)
     if subj and verb and obj:
-        if random.choice(["informative", "persuasive"]) == "informative":
-            return f"What has {subj} {verb} {obj}?"
-        else:
-            return f"Should {subj} {verb} {obj}?"
+        templates = [
+            f"What is the significance of {subj} {verb} {obj}?",
+            f"How has {subj} {verb} {obj} affected society?",
+            f"Should {subj} {verb} {obj}? Why or why not?"
+        ]
+        return random.choice(templates)
     return None
 
 def generate_topics(headlines):
-    questions = []
-    for h in headlines:
-        q = to_question(h)
-        if q:
-            questions.append(q)
+    questions = [q for h in headlines if (q := to_question(h))]
     return random.sample(questions, min(3, len(questions)))
 
 # -----------------------
-# ARTICLE RETRIEVAL
+# ARTICLE RETRIEVAL (CACHED)
 # -----------------------
+@st.cache_data(max_entries=100)
 def fetch_article_text(url):
     try:
         article = Article(url)
@@ -91,22 +89,23 @@ def fetch_article_text(url):
 
 def find_related_articles(topic, df):
     doc = nlp(topic)
-    keywords = [token.lemma_.lower() for token in doc if token.is_alpha and not token.is_stop]
-    mask = df["Title"].apply(lambda t: any(k in t.lower() for k in keywords))
-    articles = df[mask][["Title", "Link"]].drop_duplicates().to_dict(orient="records")
+    keywords = [tok.lemma_.lower() for tok in doc if tok.is_alpha and not tok.is_stop]
+    mask = df["Title"].str.lower().apply(lambda t: any(k in t for k in keywords))
+    articles = df[mask][["Title", "Link"]].drop_duplicates().head(10)
+    articles = articles.to_dict(orient="records")
     for art in articles:
         art["text"] = fetch_article_text(art["Link"])
     return articles
 
 # -----------------------
-# LOGGING
+# LOGGING (topic + article titles)
 # -----------------------
 def log_selection(topic, articles):
     log_file = "topic_logs.csv"
     entry = {
         "timestamp": datetime.now().isoformat(),
         "topic": topic,
-        "articles": "; ".join(a["Link"] for a in articles)
+        "articles": "; ".join(a["Title"] for a in articles)
     }
     if os.path.exists(log_file):
         df = pd.read_csv(log_file)
@@ -140,7 +139,7 @@ if "live_rss" in st.session_state:
     st.subheader("🔞 Live RSS Feed Preview")
     st.dataframe(st.session_state["live_rss"])
     if st.button("📂 Save to Archive"):
-        df_archive = pd.concat([df_archive, st.session_state["live_rss"]]).drop_duplicates(subset=["Link"], keep="last").reset_index(drop=True)
+        df_archive = pd.concat([df_archive, st.session_state["live_rss"]]).drop_duplicates(subset=["Date", "Title", "Link"], keep="last").reset_index(drop=True)
         df_archive.to_csv(archive_file, index=False)
         safe_git_auto_push()
         st.success("Feed saved to archive and changes pushed to Git!")
@@ -150,15 +149,15 @@ if not df_archive.empty:
     df_today = df_archive[df_archive["Date"].dt.strftime("%Y-%m-%d") == today_str]
     df_today = df_today.sort_values(by=["Source", "Title"], ascending=True)
     st.subheader("📍 Today’s Headlines")
-    st.dataframe(df_today[["Date", "Title", "Source", "Subject"]])
+    st.dataframe(df_today[["Date", "Title", "Source"]])  # Removed Subject
     # Topic generation UI
     if st.button("Generate Topics"):
-        st.session_state["topics"] = generate_topics(df_today["Title"].tolist())
+        st.session_state["topics"] = generate_topics(df_today["Title"])
     if st.session_state.get("topics"):
         choice = st.radio("Choose a topic:", st.session_state["topics"])
         if choice and st.button("Show Related Articles"):
             related = find_related_articles(choice, df_archive)
-            for art in related[:10]:
+            for art in related:
                 with st.expander(art["Title"]):
                     st.write(art["text"])
             log_selection(choice, related)

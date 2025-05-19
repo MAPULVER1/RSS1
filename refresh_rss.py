@@ -31,36 +31,13 @@ rss_feeds = {
 }
 
 # Excluded (paywalled or gated) domains
-# Domains to exclude from RSS processing due to paywalls or restrictions
 excluded_domains = ["economist.com", "ft.com", "nytimes.com"]
 
-# Subject classification
-subject_keywords = {
-    "The Executive Branch": ["federal agency", "department", "president", "potus", "constitution"],
-    "The Legislative Branch": ["legislation", "committee hearing", "lawmaking", "senate"],
-    "The Judicial Branch": ["judicial review", "due process", "prima facie", "precedent", "legal review", "briefing", "due diligence"],
-    "Education": ["mathematics", "science", "engineering", "pedagogy", "curriculum", "standardized testing"],
-    "Technology": ["innovation", "ai", "hardware", "software", "algorithm", "data privacy"],
-    "Business & the Economy": ["inflation", "gdp", "monetary policy", "wall street", "main street", "bonds"],
-    "World Leaders": ["sanctions", "foreign diplomacy", "geopolitical", "multilateralism", "trade talks"],
-    "International Conflicts": ["proxy war", "trade war", "negotiations", "public opinion", "military"],
-    "Business & Commerce": ["corporate governance", "supply chain", "speculation", "assets"],
-    "The Global Economy": ["trade agreement", "import", "export", "exchange rate", "free trade", "protectionism"],
-    "Human Rights": ["civil liberties", "oppression", "censorship", "humanitarian", "food supply", "famine", "genocide"]
-}
-
-def tag_subject(title):
-    title = title.lower()
-    for subject, keywords in subject_keywords.items():
-        if any(keyword in title for keyword in keywords):
-            return subject
-    return "General"
-
 # Main function to refresh RSS archive
+
 def refresh_rss():
     today = datetime.today().strftime("%Y-%m-%d")
     rows = []
-
     for source, url in rss_feeds.items():
         feed = feedparser.parse(url)
         for entry in feed.entries[:10]:
@@ -71,18 +48,15 @@ def refresh_rss():
                 "Date": today,
                 "Source": source,
                 "Title": entry.title,
-                "Link": entry.link,
-                "Subject": tag_subject(entry.title)
+                "Link": entry.link
             })
-
     new_df = pd.DataFrame(rows)
     archive_file = "rss_archive.csv"
     if os.path.exists(archive_file):
         df_archive = pd.read_csv(archive_file)
-        df_all = pd.concat([df_archive, new_df]).drop_duplicates(subset=["Title", "Date"])
+        df_all = pd.concat([df_archive, new_df]).drop_duplicates(subset=["Date", "Title", "Link"])
     else:
         df_all = new_df
-
     df_all.to_csv(archive_file, index=False)
     return len(new_df)
 

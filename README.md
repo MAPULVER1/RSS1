@@ -1,5 +1,6 @@
-
 # RSS1 Extemp Topic Generator – Refactor & Enhancement Guide
+
+> **NOTE:** Refactor in progress. Subject/category logic and UI have been removed from all main scripts as per this spec. See app.py, refresh_rss.py, and rss_archive_script.py for current implementation.
 
 ## Overview
 
