@@ -1,3 +1,4 @@
+import spacy # type: ignore
 import streamlit as st # type: ignore
 st.set_page_config(page_title="Extemp Topic Generator", layout="wide")
 
@@ -7,7 +8,6 @@ from datetime import datetime
 import os
 import subprocess
 import random
-import spacy # type: ignore
 from newspaper import Article # type: ignore
 
 # Try to load spaCy model, download if missing
