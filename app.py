@@ -10,7 +10,15 @@ import random
 import spacy
 from newspaper import Article
 
-nlp = spacy.load("en_core_web_sm")
+# Try to load spaCy model, download if missing
+def get_spacy_model():
+    try:
+        return spacy.load("en_core_web_sm")
+    except OSError:
+        subprocess.run(["python3", "-m", "spacy", "download", "en_core_web_sm"], check=True)
+        return spacy.load("en_core_web_sm")
+
+nlp = get_spacy_model()
 
 # -----------------------
 # LOAD EXISTING ARCHIVE
