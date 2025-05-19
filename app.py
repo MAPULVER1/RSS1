@@ -1,14 +1,14 @@
-import streamlit as st
+import streamlit as st # type: ignore
 st.set_page_config(page_title="Extemp Topic Generator", layout="wide")
 
 import pandas as pd
-import feedparser
+import feedparser # type: ignore
 from datetime import datetime
 import os
 import subprocess
 import random
-import spacy
-from newspaper import Article
+import spacy # type: ignore
+from newspaper import Article # type: ignore
 
 # Try to load spaCy model, download if missing
 def get_spacy_model():
