@@ -1,0 +1,3 @@
+cd /MAPULVER1/RSS1
+python3 -m pip install -r requirements.txt
+python3 -m spacy download en_core_web_sm

@@ -7,16 +7,10 @@ from datetime import datetime
 import os
 import subprocess
 import random
-import nltk
+import spacy
 from newspaper import Article
 
-# Download NLTK data if not already present
-try:
-    nltk.data.find('tokenizers/punkt')
-    nltk.data.find('taggers/averaged_perceptron_tagger')
-except LookupError:
-    nltk.download('punkt')
-    nltk.download('averaged_perceptron_tagger')
+nlp = spacy.load("en_core_web_sm")
 
 # -----------------------
 # LOAD EXISTING ARCHIVE
@@ -64,18 +58,10 @@ def safe_git_auto_push():
 # NLTK-BASED QUESTION GENERATOR
 # -----------------------
 def to_question(headline):
-    tokens = nltk.word_tokenize(headline)
-    tags = nltk.pos_tag(tokens)
-    subj = None
-    verb = None
-    obj = None
-    for i, (word, tag) in enumerate(tags):
-        if tag.startswith('NN') and not subj:
-            subj = word
-        elif tag.startswith('VB') and not verb:
-            verb = word
-        elif tag.startswith('NN') and subj and not obj:
-            obj = word
+    doc = nlp(headline)
+    subj = next((tok.text for tok in doc if tok.dep_ == "nsubj"), None)
+    verb = next((tok.lemma_ for tok in doc if tok.dep_ == "ROOT"), None)
+    obj = next((tok.text for tok in doc if tok.dep_ == "dobj"), None)
     if subj and verb and obj:
         if random.choice(["informative", "persuasive"]) == "informative":
             return f"What has {subj} {verb} {obj}?"
@@ -104,8 +90,9 @@ def fetch_article_text(url):
         return "[Content not available]"
 
 def find_related_articles(topic, df):
-    keywords = [w for w in nltk.word_tokenize(topic) if w.isalpha() and w.lower() not in nltk.corpus.stopwords.words('english')]
-    mask = df["Title"].apply(lambda t: any(k.lower() in t.lower() for k in keywords))
+    doc = nlp(topic)
+    keywords = [token.lemma_.lower() for token in doc if token.is_alpha and not token.is_stop]
+    mask = df["Title"].apply(lambda t: any(k in t.lower() for k in keywords))
     articles = df[mask][["Title", "Link"]].drop_duplicates().to_dict(orient="records")
     for art in articles:
         art["text"] = fetch_article_text(art["Link"])
