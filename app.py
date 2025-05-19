@@ -22,8 +22,12 @@ def get_spacy_model():
         except Exception as e:
             st.error("spaCy model 'en_core_web_sm' is not installed and could not be downloaded automatically. Please run './setup.sh' or 'python3 -m spacy download en_core_web_sm' in your environment.")
             st.stop()
+    # Ensure a return value even if st.stop() does not halt execution (for static analysis)
+    return None
 
 nlp = get_spacy_model()
+if nlp is None:
+    st.stop()
 
 # -----------------------
 # LOAD EXISTING ARCHIVE
