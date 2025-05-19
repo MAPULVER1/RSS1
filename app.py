@@ -11,13 +11,13 @@ import subprocess
 import random
 from newspaper import Article # type: ignore
 
-# Try to load spaCy model, download if missing
+# Try to load spaCy model, download if missing (with --user flag for permissions)
 def get_spacy_model():
     try:
         return spacy.load("en_core_web_sm")
     except OSError:
         try:
-            spacy.cli.download("en_core_web_sm")
+            spacy.cli.download("en_core_web_sm", "--user")
             return spacy.load("en_core_web_sm")
         except Exception as e:
             st.error(
