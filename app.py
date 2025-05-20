@@ -177,19 +177,29 @@ if not df_archive.empty:
     df_today = df_today.sort_values(by=["Source", "Title"], ascending=True)
     st.subheader("📍 Today’s Headlines")
     st.dataframe(df_today[["Date", "Title", "Source"]])
+    # Debug: Show number of headlines
+    st.write(f"Headlines available for topic generation: {len(df_today['Title'])}")
     # Topic generation UI
     if st.button("Generate Topics"):
-        st.session_state["topics"] = generate_topics(df_today["Title"])
+        questions = generate_topics(df_today["Title"])
+        st.session_state["topics"] = questions
         st.session_state["prep_timer_start"] = datetime.now().isoformat()
+        # Debug: Show number of questions generated
+        st.write(f"Questions generated: {len(questions)}")
+        if not questions:
+            st.warning("No extemp questions could be generated from today's headlines. Check your archive or question logic.")
     if st.session_state.get("topics"):
-        choice = st.radio("Choose a topic:", st.session_state["topics"])
-        if choice and st.button("Show Related Articles"):
-            related = find_related_articles(choice, df_archive)
-            for art in related:
-                with st.expander(art["Title"]):
-                    st.write(art["text"])
-            log_selection(choice, related)
-            st.success("Session logged.")
+        if not st.session_state["topics"]:
+            st.warning("No topics available. Try fetching new RSS headlines or check your archive.")
+        else:
+            choice = st.radio("Choose a topic:", st.session_state["topics"])
+            if choice and st.button("Show Related Articles"):
+                related = find_related_articles(choice, df_archive)
+                for art in related:
+                    with st.expander(art["Title"]):
+                        st.write(art["text"])
+                log_selection(choice, related)
+                st.success("Session logged.")
     # 30-minute prep timer
     if st.session_state.get("prep_timer_start"):
         import time
