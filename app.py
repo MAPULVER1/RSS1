@@ -16,7 +16,6 @@ def ensure_spacy_model():
         spacy.load("en_core_web_sm")
     except OSError:
         try:
-            import spacy.cli  # type: ignore
             spacy.cli.download("en_core_web_sm", "--user")
             spacy.load("en_core_web_sm")
         except Exception:
