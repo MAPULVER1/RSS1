@@ -1,4 +1,5 @@
 import spacy # type: ignore
+import spacy.cli  # type: ignore
 import streamlit as st # type: ignore
 st.set_page_config(page_title="Extemp Topic Generator", layout="wide")
 
@@ -16,7 +17,8 @@ def ensure_spacy_model():
         spacy.load("en_core_web_sm")
     except OSError:
         try:
-            spacy.cli.download("en_core_web_sm", "--user")
+            # Try downloading without --user (let spaCy pick the right location)
+            spacy.cli.download("en_core_web_sm")
             spacy.load("en_core_web_sm")
         except Exception:
             st.error(
