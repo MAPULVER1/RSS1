@@ -1,0 +1,5 @@
+#!/bin/bash
+# postInstall script for Streamlit Cloud or similar environments
+
+# Install spaCy English model to user directory
+python3 -m spacy download en_core_web_sm --user
