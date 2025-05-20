@@ -13,9 +13,11 @@ from newspaper import Article # type: ignore
 try:
     nlp = spacy.load("en_core_web_sm")
 except OSError:
-    import os
-    os.system("python3 -m spacy download en_core_web_sm")
-    nlp = spacy.load("en_core_web_sm")
+    st.error(
+        "spaCy model 'en_core_web_sm' is not installed and could not be installed automatically due to environment permissions. "
+        "Please ensure it is installed by running './setup.sh' or 'python3 -m spacy download en_core_web_sm' in your environment before running the app."
+    )
+    st.stop()
 
 # -----------------------
 # LOAD EXISTING ARCHIVE
