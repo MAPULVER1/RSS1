@@ -10,13 +10,13 @@ import subprocess
 import random
 from newspaper import Article # type: ignore
 
-# Ensure spaCy model is installed
+# Ensure spaCy is imported at the very top and not shadowed in any function
 def ensure_spacy_model():
     try:
         spacy.load("en_core_web_sm")
     except OSError:
         try:
-            import spacy.cli
+            import spacy.cli  # type: ignore
             spacy.cli.download("en_core_web_sm", "--user")
             spacy.load("en_core_web_sm")
         except Exception:
