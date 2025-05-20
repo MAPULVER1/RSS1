@@ -3,8 +3,6 @@ import streamlit as st # type: ignore
 st.set_page_config(page_title="Extemp Topic Generator", layout="wide")
 
 import spacy
-if not os.path.exists("./en_core_web_sm/en_core_web_sm-3.8.0/meta.json"):
-    os.system("python3 -m spacy download en_core_web_sm --target ./en_core_web_sm")
 nlp = spacy.load("./en_core_web_sm")
 
 import pandas as pd
