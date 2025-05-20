@@ -7,10 +7,11 @@ nlp = spacy.load("./en_core_web_sm")
 
 import pandas as pd
 import feedparser # type: ignore
-from datetime import datetime
+from datetime import datetime, timedelta
 import subprocess
 import random
 from newspaper import Article # type: ignore
+import csv
 
 # -----------------------
 # LOAD EXISTING ARCHIVE
@@ -39,6 +40,40 @@ def fetch_live_rss(feed_url):
             "Link": entry.get("link", "No link")
         })
     return pd.DataFrame(entries)
+
+# --- SIDEBAR: RSS Feed Selection ---
+rss_list_file = "rss_feeds.csv"
+def get_rss_feeds():
+    feeds = []
+    if os.path.exists(rss_list_file):
+        with open(rss_list_file, newline="") as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                feeds.append(row)
+    return feeds
+
+rss_feeds = get_rss_feeds()
+feed_names = [f["Name"] for f in rss_feeds] if rss_feeds else []
+feed_urls = {f["Name"]: f["URL"] for f in rss_feeds} if rss_feeds else {}
+
+st.sidebar.header("🔄 Live RSS Fetch")
+if feed_names:
+    selected_feed = st.sidebar.selectbox("Choose an RSS Feed", feed_names)
+    feed_url = feed_urls[selected_feed]
+else:
+    feed_url = st.sidebar.text_input(
+        "RSS Feed URL",
+        value="https://feeds.feedburner.com/TechCrunch/",
+        help="Enter the URL of the RSS feed you want to fetch."
+    )
+
+if st.sidebar.button("📅 Fetch Feed"):
+    if feed_url.strip():
+        df_live = fetch_live_rss(feed_url)
+        st.session_state["live_rss"] = df_live
+        st.success(f"Successfully fetched feed from: {feed_url}")
+    else:
+        st.error("Please provide a valid RSS feed URL.")
 
 # -----------------------
 # GIT AUTO PUSH FUNCTION
@@ -116,23 +151,15 @@ def log_selection(topic, articles):
     safe_git_auto_push()
 
 # -----------------------
+# Prune archive to only keep last 30 days
+# -----------------------
+cutoff_date = datetime.today() - timedelta(days=30)
+df_archive = df_archive[df_archive["Date"] >= cutoff_date]
+
+# -----------------------
 # STREAMLIT UI
 # -----------------------
 st.title("🗞️ Extemp Topic Generator")
-
-st.sidebar.header("🔄 Live RSS Fetch")
-feed_url = st.sidebar.text_input(
-    "RSS Feed URL",
-    value="https://feeds.feedburner.com/TechCrunch/",
-    help="Enter the URL of the RSS feed you want to fetch."
-)
-if st.sidebar.button("📅 Fetch Feed"):
-    if feed_url.strip():
-        df_live = fetch_live_rss(feed_url)
-        st.session_state["live_rss"] = df_live
-        st.success(f"Successfully fetched feed from: {feed_url}")
-    else:
-        st.error("Please provide a valid RSS feed URL.")
 
 # Show live RSS results
 if "live_rss" in st.session_state:
@@ -149,10 +176,11 @@ if not df_archive.empty:
     df_today = df_archive[df_archive["Date"].dt.strftime("%Y-%m-%d") == today_str]
     df_today = df_today.sort_values(by=["Source", "Title"], ascending=True)
     st.subheader("📍 Today’s Headlines")
-    st.dataframe(df_today[["Date", "Title", "Source"]])  # Removed Subject
+    st.dataframe(df_today[["Date", "Title", "Source"]])
     # Topic generation UI
     if st.button("Generate Topics"):
         st.session_state["topics"] = generate_topics(df_today["Title"])
+        st.session_state["prep_timer_start"] = datetime.now().isoformat()
     if st.session_state.get("topics"):
         choice = st.radio("Choose a topic:", st.session_state["topics"])
         if choice and st.button("Show Related Articles"):
@@ -162,6 +190,16 @@ if not df_archive.empty:
                     st.write(art["text"])
             log_selection(choice, related)
             st.success("Session logged.")
+    # 30-minute prep timer
+    if st.session_state.get("prep_timer_start"):
+        import time
+        prep_start = datetime.fromisoformat(st.session_state["prep_timer_start"])
+        elapsed = (datetime.now() - prep_start).total_seconds()
+        remaining = max(0, 30*60 - int(elapsed))
+        mins, secs = divmod(remaining, 60)
+        st.info(f"⏳ Prep Time Remaining: {mins:02.0f}:{secs:02.0f}")
+        if remaining == 0:
+            st.warning("Prep time is up!")
 else:
     st.info("No public archive found.")
 
