@@ -195,6 +195,33 @@ Logging is strictly for administrative tracking: only log which topic was chosen
 
 ---
 
+## Local spaCy Model Setup (Cloud/CI Compatible)
+
+This project includes the full `en_core_web_sm` spaCy model in the `./en_core_web_sm/` directory for maximum compatibility with cloud and restricted environments.
+
+**If you update or re-download the model, you must flatten the directory structure as follows:**
+
+- All files and folders (such as `config.cfg`, `meta.json`, `__init__.py`, `tokenizer`, `vocab/`, etc.) must be directly inside `./en_core_web_sm/`.
+- There should be no versioned subdirectory (like `en_core_web_sm-3.8.0/`) containing model data. Move all its contents up one level and remove the empty subdirectory.
+
+**Example commands to flatten after a fresh download:**
+
+```bash
+mv ./en_core_web_sm/en_core_web_sm-3.8.0/* ./en_core_web_sm/
+rmdir ./en_core_web_sm/en_core_web_sm-3.8.0
+```
+
+Your code should load the model with:
+
+```python
+import spacy
+nlp = spacy.load("./en_core_web_sm")
+```
+
+This ensures the app works in any environment, including Streamlit Cloud, without requiring runtime downloads or admin permissions.
+
+---
+
 ## Setup Instructions
 
 To set up the environment and install all dependencies (including the spaCy English model), run:
