@@ -93,6 +93,7 @@ def safe_git_auto_push():
 # -----------------------
 def to_question(headline):
     doc = nlp(headline)
+    # Try SVO
     subj = next((tok.text for tok in doc if tok.dep_ == "nsubj"), None)
     verb = next((tok.lemma_ for tok in doc if tok.dep_ == "ROOT"), None)
     obj  = next((tok.text for tok in doc if tok.dep_ == "dobj"), None)
@@ -103,6 +104,19 @@ def to_question(headline):
             f"Should {subj} {verb} {obj}? Why or why not?"
         ]
         return random.choice(templates)
+    # Try NER-based
+    ents = [ent for ent in doc.ents if ent.label_ in ("PERSON", "ORG", "GPE", "EVENT", "LAW", "LOC")]
+    if ents and verb:
+        ent = ents[0].text
+        templates = [
+            f"What is the impact of {ent} {verb}?",
+            f"How is {ent} involved in current events?",
+            f"What challenges does {ent} face regarding {verb}?"
+        ]
+        return random.choice(templates)
+    # Fallback: generic question
+    if len(headline.split()) > 3:
+        return f"What are the implications of: '{headline}'?"
     return None
 
 def generate_topics(headlines):
