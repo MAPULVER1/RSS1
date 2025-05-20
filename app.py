@@ -1,5 +1,4 @@
 import spacy # type: ignore
-import spacy.cli  # type: ignore
 import streamlit as st # type: ignore
 st.set_page_config(page_title="Extemp Topic Generator", layout="wide")
 
@@ -11,21 +10,25 @@ import subprocess
 import random
 from newspaper import Article # type: ignore
 
-# Try to load spaCy model, download if missing (Streamlit Cloud/Heroku/CI compatible)
-def get_spacy_model():
+# Ensure spaCy model is installed
+def ensure_spacy_model():
     try:
-        return spacy.load("en_core_web_sm")
+        spacy.load("en_core_web_sm")
     except OSError:
-        st.error(
-            "spaCy model 'en_core_web_sm' is not installed. "
-            "Please run './setup.sh' or 'python3 -m spacy download en_core_web_sm' in your environment before running the app."
-        )
-        st.stop()
-        return None
+        try:
+            import spacy.cli
+            spacy.cli.download("en_core_web_sm", "--user")
+            spacy.load("en_core_web_sm")
+        except Exception:
+            st.error(
+                "spaCy model 'en_core_web_sm' is not installed and could not be downloaded automatically. "
+                "Please run './setup.sh' or 'python3 -m spacy download en_core_web_sm' in your environment."
+            )
+            st.stop()
 
-nlp = get_spacy_model()
-if nlp is None:
-    st.stop()
+ensure_spacy_model()
+
+nlp = spacy.load("en_core_web_sm")
 
 # -----------------------
 # LOAD EXISTING ARCHIVE
