@@ -1,31 +1,11 @@
-import spacy # type: ignore
 import os
 import streamlit as st # type: ignore
 st.set_page_config(page_title="Extemp Topic Generator", layout="wide")
 
-MODEL_NAME = "en_core_web_sm"
-MODEL_PATH = f"./{MODEL_NAME}"
-
-def ensure_spacy_model():
-    try:
-        return spacy.load(MODEL_NAME)
-    except OSError:
-        # Try local directory first
-        try:
-            return spacy.load(MODEL_PATH)
-        except OSError:
-            # Download to a local folder (writable)
-            try:
-                os.system(f"python3 -m spacy download {MODEL_NAME} --target {MODEL_PATH}")
-                return spacy.load(MODEL_PATH)
-            except Exception as e:
-                st.error(
-                    f"spaCy model '{MODEL_NAME}' is not installed and could not be installed automatically due to environment permissions. "
-                    f"Please ensure it is installed by running './setup.sh' or 'python3 -m spacy download {MODEL_NAME}' in your environment before running the app. Error: {e}"
-                )
-                st.stop()
-
-nlp = ensure_spacy_model()
+import spacy
+if not os.path.exists("./en_core_web_sm"):
+    os.system("python3 -m spacy download en_core_web_sm --target ./en_core_web_sm")
+nlp = spacy.load("./en_core_web_sm")
 
 import pandas as pd
 import feedparser # type: ignore
