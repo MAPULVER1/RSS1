@@ -1,5 +1,4 @@
 import spacy # type: ignore
-import spacy.cli  # type: ignore
 import streamlit as st # type: ignore
 st.set_page_config(page_title="Extemp Topic Generator", layout="wide")
 
@@ -11,25 +10,12 @@ import subprocess
 import random
 from newspaper import Article # type: ignore
 
-# Ensure spaCy is imported at the very top and not shadowed in any function
-def ensure_spacy_model():
-    try:
-        spacy.load("en_core_web_sm")
-    except OSError:
-        try:
-            # Try downloading without --user (let spaCy pick the right location)
-            spacy.cli.download("en_core_web_sm")
-            spacy.load("en_core_web_sm")
-        except Exception:
-            st.error(
-                "spaCy model 'en_core_web_sm' is not installed and could not be downloaded automatically. "
-                "Please run './setup.sh' or 'python3 -m spacy download en_core_web_sm' in your environment."
-            )
-            st.stop()
-
-ensure_spacy_model()
-
-nlp = spacy.load("en_core_web_sm")
+try:
+    nlp = spacy.load("en_core_web_sm")
+except OSError:
+    import os
+    os.system("python3 -m spacy download en_core_web_sm")
+    nlp = spacy.load("en_core_web_sm")
 
 # -----------------------
 # LOAD EXISTING ARCHIVE
