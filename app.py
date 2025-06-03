@@ -107,7 +107,8 @@ def to_question(headline):
             f"How has {subj} {verb} {obj} affected society?",
             f"Should {subj} {verb} {obj}? Why or why not?"
         ]
-        return random.choice(templates)
+        # Return all templates for more variety
+        return [t for t in templates]
     # Try NER-based
     ents = [ent for ent in doc.ents if ent.label_ in ("PERSON", "ORG", "GPE", "EVENT", "LAW", "LOC")]
     if ents and verb:
@@ -117,28 +118,37 @@ def to_question(headline):
             f"How is {ent} involved in current events?",
             f"What challenges does {ent} face regarding {verb}?"
         ]
-        return random.choice(templates)
+        return [t for t in templates]
     # Fallback: generic question
     if len(headline.split()) > 3:
-        return f"What are the implications of: '{headline}'?"
+        return [f"What are the implications of: '{headline}'?"]
     # Final fallback: rephrase as a yes/no question
     if len(headline.split()) > 1:
-        return f"Should we be concerned about: '{headline}'?"
-    return None
+        return [f"Should we be concerned about: '{headline}'?"]
+    return []
 
 def generate_topics(headlines):
-    # Filter out empty or non-string headlines
     valid_headlines = [str(h) for h in headlines if isinstance(h, str) and h.strip()]
-    questions = [q for h in valid_headlines if (q := to_question(h))]
+    all_questions = []
+    for h in valid_headlines:
+        qs = to_question(h)
+        if qs:
+            all_questions.extend(qs)
+    # Remove duplicates and keep order
+    seen = set()
+    unique_questions = []
+    for q in all_questions:
+        if q not in seen:
+            unique_questions.append(q)
+            seen.add(q)
     # Always provide at least 3 questions, even if generic
-    while len(questions) < 3 and valid_headlines:
+    while len(unique_questions) < 3 and valid_headlines:
         filler = f"What are the implications of: '{random.choice(valid_headlines)}'?"
-        if filler not in questions:
-            questions.append(filler)
-    # If still not enough, add generic placeholders
-    while len(questions) < 3:
-        questions.append("What are the implications of current events?")
-    return random.sample(questions, min(3, len(questions)))
+        if filler not in unique_questions:
+            unique_questions.append(filler)
+    while len(unique_questions) < 3:
+        unique_questions.append("What are the implications of current events?")
+    return random.sample(unique_questions, min(3, len(unique_questions)))
 
 # -----------------------
 # ARTICLE RETRIEVAL (CACHED)
@@ -208,13 +218,10 @@ if not df_archive.empty:
     df_today = df_today.sort_values(by=["Source", "Title"], ascending=True)
     st.subheader("📍 Today’s Headlines")
     st.dataframe(df_today[["Date", "Title", "Source"]])
-    # Debug: Show number of headlines
     st.write(f"Headlines available for topic generation: {len(df_today['Title'])}")
-    # Topic generation UI
     if st.button("Generate Topics"):
         questions = generate_topics(df_today["Title"])
         st.session_state["topics"] = questions
-        # Debug: Show number of questions generated
         st.write(f"Questions generated: {len(questions)}")
         if not questions:
             st.warning("No extemp questions could be generated from today's headlines. Check your archive or question logic.")
@@ -223,19 +230,28 @@ if not df_archive.empty:
             st.warning("No topics available. Try fetching new RSS headlines or check your archive.")
         else:
             st.subheader("🔎 Research & Select a Topic")
-            for idx, topic in enumerate(st.session_state["topics"]):
-                with st.expander(f"Topic {idx+1}: {topic}"):
-                    st.write("#### Relevant Research Articles:")
-                    related = find_related_articles(topic, df_archive)
-                    if related:
-                        for art in related:
-                            st.markdown(f"**[{art['Title']}]({art['Link']})**")
-                            st.write(art["text"][:500] + ("..." if len(art["text"]) > 500 else ""))
-                    else:
-                        st.info("No related articles found in the archive.")
-                    if st.button(f"Select Topic {idx+1}"):
-                        log_selection(topic, related)
-                        st.success(f"Selected and logged: {topic}")
+            choice = st.radio("Choose a topic:", st.session_state["topics"])
+            if st.button("Lock Topic Selection"):
+                st.session_state["locked_topic"] = choice
+                st.session_state["justification"] = ""
+                st.experimental_rerun()
+            if st.session_state.get("locked_topic"):
+                st.success(f"Topic locked: {st.session_state['locked_topic']}")
+                st.write("### Justify your topic selection:")
+                justification = st.text_area("Justification", value=st.session_state.get("justification", ""))
+                if st.button("Submit Justification"):
+                    st.session_state["justification"] = justification
+                    related = find_related_articles(st.session_state["locked_topic"], df_archive)
+                    log_selection(st.session_state["locked_topic"], related)
+                    st.success("Topic and justification logged. Good luck!")
+                st.write("#### Relevant Research Articles:")
+                related = find_related_articles(st.session_state["locked_topic"], df_archive)
+                if related:
+                    for art in related:
+                        st.markdown(f"**[{art['Title']}]({art['Link']})**")
+                        st.write(art["text"][:500] + ("..." if len(art["text"]) > 500 else ""))
+                else:
+                    st.info("No related articles found in the archive.")
 else:
     st.info("No public archive found.")
 
