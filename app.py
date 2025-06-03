@@ -205,7 +205,6 @@ if not df_archive.empty:
     if st.button("Generate Topics"):
         questions = generate_topics(df_today["Title"])
         st.session_state["topics"] = questions
-        st.session_state["prep_timer_start"] = datetime.now().isoformat()
         # Debug: Show number of questions generated
         st.write(f"Questions generated: {len(questions)}")
         if not questions:
@@ -214,28 +213,20 @@ if not df_archive.empty:
         if not st.session_state["topics"]:
             st.warning("No topics available. Try fetching new RSS headlines or check your archive.")
         else:
-            choice = st.radio("Choose a topic:", st.session_state["topics"])
-            if choice and st.button("Show Related Articles"):
-                related = find_related_articles(choice, df_archive)
-                for art in related:
-                    with st.expander(art["Title"]):
-                        st.write(art["text"])
-                log_selection(choice, related)
-                st.success("Session logged.")
-    # 30-minute prep timer (auto-refresh, improved UX)
-    if st.session_state.get("prep_timer_start"):
-        import time
-        prep_start = datetime.fromisoformat(st.session_state["prep_timer_start"])
-        elapsed = (datetime.now() - prep_start).total_seconds()
-        remaining = max(0, 30*60 - int(elapsed))
-        mins, secs = divmod(remaining, 60)
-        progress = (30*60 - remaining) / (30*60)
-        st.progress(progress, text=f"⏳ Prep Time Remaining: {mins:02.0f}:{secs:02.0f}")
-        st.markdown(f"<h3 style='color:#ff4b4b;'>Prep ends at: { (prep_start + timedelta(minutes=30)).strftime('%I:%M %p') }</h3>", unsafe_allow_html=True)
-        if remaining > 0:
-            st_autorefresh(interval=1000, key="prep_timer_refresh")
-        if remaining == 0:
-            st.warning("Prep time is up!")
+            st.subheader("🔎 Research & Select a Topic")
+            for idx, topic in enumerate(st.session_state["topics"]):
+                with st.expander(f"Topic {idx+1}: {topic}"):
+                    st.write("#### Relevant Research Articles:")
+                    related = find_related_articles(topic, df_archive)
+                    if related:
+                        for art in related:
+                            st.markdown(f"**[{art['Title']}]({art['Link']})**")
+                            st.write(art["text"][:500] + ("..." if len(art["text"]) > 500 else ""))
+                    else:
+                        st.info("No related articles found in the archive.")
+                    if st.button(f"Select Topic {idx+1}"):
+                        log_selection(topic, related)
+                        st.success(f"Selected and logged: {topic}")
 else:
     st.info("No public archive found.")
 
