@@ -12,6 +12,7 @@ import subprocess
 import random
 from newspaper import Article # type: ignore
 import csv
+from streamlit_autorefresh import st_autorefresh
 
 # -----------------------
 # LOAD EXISTING ARCHIVE
@@ -232,8 +233,7 @@ if not df_archive.empty:
         st.progress(progress, text=f"⏳ Prep Time Remaining: {mins:02.0f}:{secs:02.0f}")
         st.markdown(f"<h3 style='color:#ff4b4b;'>Prep ends at: { (prep_start + timedelta(minutes=30)).strftime('%I:%M %p') }</h3>", unsafe_allow_html=True)
         if remaining > 0:
-            time.sleep(1)
-            st.experimental_rerun()
+            st_autorefresh(interval=1000, key="prep_timer_refresh")
         if remaining == 0:
             st.warning("Prep time is up!")
 else:
