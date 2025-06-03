@@ -57,25 +57,6 @@ rss_feeds = get_rss_feeds()
 feed_names = [f["Name"] for f in rss_feeds] if rss_feeds else []
 feed_urls = {f["Name"]: f["URL"] for f in rss_feeds} if rss_feeds else {}
 
-st.sidebar.header("🔄 Live RSS Fetch")
-if feed_names:
-    selected_feed = st.sidebar.selectbox("Choose an RSS Feed", feed_names)
-    feed_url = feed_urls[selected_feed]
-else:
-    feed_url = st.sidebar.text_input(
-        "RSS Feed URL",
-        value="https://feeds.feedburner.com/TechCrunch/",
-        help="Enter the URL of the RSS feed you want to fetch."
-    )
-
-if st.sidebar.button("📅 Fetch Feed"):
-    if feed_url.strip():
-        df_live = fetch_live_rss(feed_url)
-        st.session_state["live_rss"] = df_live
-        st.success(f"Successfully fetched feed from: {feed_url}")
-    else:
-        st.error("Please provide a valid RSS feed URL.")
-
 # -----------------------
 # GIT AUTO PUSH FUNCTION
 # -----------------------
@@ -202,56 +183,73 @@ df_archive = df_archive[df_archive["Date"] >= cutoff_date]
 # -----------------------
 st.title("🗞️ Extemp Topic Generator")
 
-# Show live RSS results
+# --- 1. Live RSS Fetch (Sidebar) ---
+st.sidebar.header("🔄 Live RSS Fetch")
+if feed_names:
+    selected_feed = st.sidebar.selectbox("Choose an RSS Feed", feed_names)
+    feed_url = feed_urls[selected_feed]
+else:
+    feed_url = st.sidebar.text_input(
+        "RSS Feed URL",
+        value="https://feeds.feedburner.com/TechCrunch/",
+        help="Enter the URL of the RSS feed you want to fetch."
+    )
+if st.sidebar.button("📅 Fetch Feed"):
+    if feed_url.strip():
+        df_live = fetch_live_rss(feed_url)
+        st.session_state["live_rss"] = df_live
+        st.success(f"Successfully fetched feed from: {feed_url}")
+    else:
+        st.error("Please provide a valid RSS feed URL.")
 if "live_rss" in st.session_state:
-    st.subheader("🔞 Live RSS Feed Preview")
-    st.dataframe(st.session_state["live_rss"])
-    if st.button("📂 Save to Archive"):
+    st.sidebar.subheader("🔞 Live RSS Feed Preview")
+    st.sidebar.dataframe(st.session_state["live_rss"])
+    if st.sidebar.button("📂 Save to Archive"):
         df_archive = pd.concat([df_archive, st.session_state["live_rss"]]).drop_duplicates(subset=["Date", "Title", "Link"], keep="last").reset_index(drop=True)
         df_archive.to_csv(archive_file, index=False)
         safe_git_auto_push()
-        st.success("Feed saved to archive and changes pushed to Git!")
+        st.sidebar.success("Feed saved to archive and changes pushed to Git!")
 
-# Show and auto-sort today's archive headlines
+# --- 2. Topic Generation and Selection ---
 if not df_archive.empty:
     df_today = df_archive[df_archive["Date"].dt.strftime("%Y-%m-%d") == today_str]
     df_today = df_today.sort_values(by=["Source", "Title"], ascending=True)
-    st.subheader("📍 Today’s Headlines")
-    st.dataframe(df_today[["Date", "Title", "Source"]])
-    st.write(f"Headlines available for topic generation: {len(df_today['Title'])}")
-    if st.button("Generate Topics"):
+    st.subheader("📍 Today’s Headlines (for reference)")
+    with st.expander("Show/Hide Today's Headlines"):
+        st.dataframe(df_today[["Date", "Title", "Source"]])
+        st.write(f"Headlines available for topic generation: {len(df_today['Title'])}")
+    # --- Step 1: Generate Topics ---
+    if "topics" not in st.session_state or st.button("Generate New Topics"):
         questions = generate_topics(df_today["Title"])
         st.session_state["topics"] = questions
-        st.write(f"Questions generated: {len(questions)}")
-        if not questions:
-            st.warning("No extemp questions could be generated from today's headlines. Check your archive or question logic.")
+        st.session_state.pop("locked_topic", None)
+        st.session_state.pop("justification", None)
+    # --- Step 2: Student Chooses One Topic ---
     if st.session_state.get("topics"):
-        if not st.session_state["topics"]:
-            st.warning("No topics available. Try fetching new RSS headlines or check your archive.")
+        st.subheader("🔎 Choose Your Extemp Topic")
+        choice = st.radio("Select one of the following topics:", st.session_state["topics"])
+        if st.button("Lock Topic Selection"):
+            st.session_state["locked_topic"] = choice
+            st.session_state["justification"] = ""
+            # No rerun needed, just show next section below
+    # --- Step 3: Justification and Research ---
+    if st.session_state.get("locked_topic"):
+        st.success(f"Topic locked: {st.session_state['locked_topic']}")
+        st.write("### Research & Justify Your Topic Selection")
+        related = find_related_articles(st.session_state["locked_topic"], df_archive)
+        st.write("#### Relevant Research Articles:")
+        if related:
+            for art in related:
+                st.markdown(f"**[{art['Title']}]({art['Link']})**")
+                st.write(art["text"][:500] + ("..." if len(art["text"]) > 500 else ""))
         else:
-            st.subheader("🔎 Research & Select a Topic")
-            choice = st.radio("Choose a topic:", st.session_state["topics"])
-            if st.button("Lock Topic Selection"):
-                st.session_state["locked_topic"] = choice
-                st.session_state["justification"] = ""
-                st.experimental_rerun()
-            if st.session_state.get("locked_topic"):
-                st.success(f"Topic locked: {st.session_state['locked_topic']}")
-                st.write("### Justify your topic selection:")
-                justification = st.text_area("Justification", value=st.session_state.get("justification", ""))
-                if st.button("Submit Justification"):
-                    st.session_state["justification"] = justification
-                    related = find_related_articles(st.session_state["locked_topic"], df_archive)
-                    log_selection(st.session_state["locked_topic"], related)
-                    st.success("Topic and justification logged. Good luck!")
-                st.write("#### Relevant Research Articles:")
-                related = find_related_articles(st.session_state["locked_topic"], df_archive)
-                if related:
-                    for art in related:
-                        st.markdown(f"**[{art['Title']}]({art['Link']})**")
-                        st.write(art["text"][:500] + ("..." if len(art["text"]) > 500 else ""))
-                else:
-                    st.info("No related articles found in the archive.")
+            st.info("No related articles found in the archive.")
+        st.write("#### Your Justification:")
+        justification = st.text_area("Explain why this topic is feasible and interesting, using evidence from the articles above.", value=st.session_state.get("justification", ""))
+        if st.button("Submit Justification"):
+            st.session_state["justification"] = justification
+            log_selection(st.session_state["locked_topic"], related)
+            st.success("Topic and justification logged. Good luck!")
 else:
     st.info("No public archive found.")
 
