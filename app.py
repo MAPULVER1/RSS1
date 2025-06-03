@@ -93,6 +93,9 @@ def safe_git_auto_push():
 # ADVANCED QUESTION GENERATOR (spaCy)
 # -----------------------
 def to_question(headline):
+    # Ensure input is a string
+    if not isinstance(headline, str) or not headline.strip():
+        return None
     doc = nlp(headline)
     # Try SVO
     subj = next((tok.text for tok in doc if tok.dep_ == "nsubj"), None)
@@ -118,17 +121,23 @@ def to_question(headline):
     # Fallback: generic question
     if len(headline.split()) > 3:
         return f"What are the implications of: '{headline}'?"
+    # Final fallback: rephrase as a yes/no question
+    if len(headline.split()) > 1:
+        return f"Should we be concerned about: '{headline}'?"
     return None
 
 def generate_topics(headlines):
     # Filter out empty or non-string headlines
     valid_headlines = [str(h) for h in headlines if isinstance(h, str) and h.strip()]
     questions = [q for h in valid_headlines if (q := to_question(h))]
-    # If not enough questions, fill with generic prompts
+    # Always provide at least 3 questions, even if generic
     while len(questions) < 3 and valid_headlines:
         filler = f"What are the implications of: '{random.choice(valid_headlines)}'?"
         if filler not in questions:
             questions.append(filler)
+    # If still not enough, add generic placeholders
+    while len(questions) < 3:
+        questions.append("What are the implications of current events?")
     return random.sample(questions, min(3, len(questions)))
 
 # -----------------------
