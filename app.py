@@ -12,7 +12,6 @@ import subprocess
 import random
 from newspaper import Article # type: ignore
 import csv
-from streamlit_autorefresh import st_autorefresh
 
 # -----------------------
 # LOAD EXISTING ARCHIVE
