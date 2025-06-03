@@ -6,5 +6,6 @@ spacy
 newspaper3k
 lxml_html_clean
 lxml[html_clean]
+streamlit_autorefresh
 # The spaCy model is now committed locally in ./en_core_web_sm, so no need to install via pip.
 # Remove en_core_web_sm wheel line to avoid redundancy and pip errors.
