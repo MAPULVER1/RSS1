@@ -120,7 +120,14 @@ def to_question(headline):
     return None
 
 def generate_topics(headlines):
-    questions = [q for h in headlines if (q := to_question(h))]
+    # Filter out empty or non-string headlines
+    valid_headlines = [str(h) for h in headlines if isinstance(h, str) and h.strip()]
+    questions = [q for h in valid_headlines if (q := to_question(h))]
+    # If not enough questions, fill with generic prompts
+    while len(questions) < 3 and valid_headlines:
+        filler = f"What are the implications of: '{random.choice(valid_headlines)}'?"
+        if filler not in questions:
+            questions.append(filler)
     return random.sample(questions, min(3, len(questions)))
 
 # -----------------------
@@ -214,17 +221,27 @@ if not df_archive.empty:
                         st.write(art["text"])
                 log_selection(choice, related)
                 st.success("Session logged.")
-    # 30-minute prep timer
+    # 30-minute prep timer (auto-refresh, improved UX)
     if st.session_state.get("prep_timer_start"):
         import time
         prep_start = datetime.fromisoformat(st.session_state["prep_timer_start"])
         elapsed = (datetime.now() - prep_start).total_seconds()
         remaining = max(0, 30*60 - int(elapsed))
         mins, secs = divmod(remaining, 60)
-        st.info(f"⏳ Prep Time Remaining: {mins:02.0f}:{secs:02.0f}")
+        progress = (30*60 - remaining) / (30*60)
+        st.progress(progress, text=f"⏳ Prep Time Remaining: {mins:02.0f}:{secs:02.0f}")
+        st.markdown(f"<h3 style='color:#ff4b4b;'>Prep ends at: { (prep_start + timedelta(minutes=30)).strftime('%I:%M %p') }</h3>", unsafe_allow_html=True)
+        if remaining > 0:
+            time.sleep(1)
+            st.experimental_rerun()
         if remaining == 0:
             st.warning("Prep time is up!")
 else:
     st.info("No public archive found.")
+
+# --- RECOMMENDED QUESTIONS FOR UI/UX IMPROVEMENT ---
+st.sidebar.markdown("---")
+st.sidebar.header("💡 Extemp App Design Prompts")
+st.sidebar.markdown("1. **How would you like to prepare for an extemporaneous speech? What would the display to work from look like?**\n2. **How can that page be functional and broad in its ability to be all-encompassing?**\n3. **What functions are being pulled from the repository that would not otherwise be a back-end need?**\n4. **Are questions supposed to be challenging? If so, do the questions follow a clear delineation between argument and rhetoric?**\n5. **With all errors, why are we not being direct about the true nature of the frontend landscape?**")
 
 
