@@ -145,7 +145,18 @@ def fetch_article_text(url):
 def find_related_articles(topic, df):
     doc = nlp(topic)
     keywords = [tok.lemma_.lower() for tok in doc if tok.is_alpha and not tok.is_stop]
-    mask = df["Title"].str.lower().apply(lambda t: any(k in t for k in keywords))
+    if "Title" not in df.columns:
+        return []
+
+    normalized_titles = (
+        df["Title"].fillna("")
+        .apply(lambda t: t if isinstance(t, str) else str(t))
+        .str.lower()
+    )
+
+    mask = normalized_titles.apply(
+        lambda t: any(k in t for k in keywords) if isinstance(t, str) and t else False
+    )
     articles = df[mask][["Title", "Link"]].drop_duplicates().head(10)
     articles = articles.to_dict(orient="records")
     for art in articles:
